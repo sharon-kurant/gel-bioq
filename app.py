@@ -1,9 +1,14 @@
 import streamlit as st
-import os
 from datetime import datetime
-from Bio import SeqIO
-from Bio.SeqUtils.ProtParam import ProteinAnalysis
 
+# Import utility functions
+from utils.data_processing import (
+    process_organism_data,
+    normalize_abundance,
+    calculate_capillary_ranges,
+    filter_by_pI_range,
+    get_pI_range
+)
 from utils.visualization import create_gel_plot, create_capillary_plot
 from utils.export import create_download_package
 
@@ -19,84 +24,6 @@ ORGANISMS = {
     "S. cerevisiae": "4932",
     "E. coli": "511145"
 }
-
-# Function to get file paths
-def get_file_paths(organism_id):
-    fasta_path = os.path.join('data', 'fasta', f'fasta.v11.5.{organism_id}.fa')
-    abundance_path = os.path.join('data', 'abundance', f'{organism_id}-WHOLE_ORGANISM-integrated.txt')
-    return fasta_path, abundance_path
-
-# Parse FASTA files
-def parse_fasta(filepath):
-    sequences = []
-    if os.path.exists(filepath):
-        for record in SeqIO.parse(filepath, "fasta"):
-            sequences.append(record)
-    return sequences
-
-# Filter sequences
-def filter_sequences(sequences):
-    filtered_sequences = []
-    for record in sequences:
-        if 'X' not in str(record.seq):
-            filtered_sequences.append(record)
-    return filtered_sequences
-
-# Calculate protein properties
-def calculate_properties(sequences):
-    properties = []
-    for record in sequences:
-        seq = str(record.seq)
-        analysis = ProteinAnalysis(seq)
-        mw = analysis.molecular_weight()
-        pi = analysis.isoelectric_point()
-        properties.append((record.id, mw, pi))
-    return properties
-
-# Parse abundance files
-def parse_abundance(filepath):
-    abundance_dict = {}
-    if os.path.exists(filepath):
-        with open(filepath, 'r') as file:
-            for line in file:
-                if not line.startswith('#'):
-                    parts = line.strip().split('\t')
-                    if len(parts) == 2:
-                        name, abundance = parts
-                        abundance_dict[name] = float(abundance)
-                    elif len(parts) == 3:
-                        _, name, abundance = parts
-                        abundance_dict[name] = float(abundance)
-    return abundance_dict
-
-# Filter by molecular weight
-def filter_by_molecular_weight(properties, min_mw=None, max_mw=None):
-    filtered_properties = []
-    for prop in properties:
-        protein_id, mw, pi = prop
-        if (min_mw is None or mw >= min_mw) and (max_mw is None or mw <= max_mw):
-            filtered_properties.append(prop)
-    return filtered_properties
-
-# Normalize abundance
-def normalize_abundance(abundance1, abundance2, ratio1=50, ratio2=50, min_size=1, max_size=1000):
-    all_values = [v * ratio1 / 100 for v in abundance1.values()] + [v * ratio2 / 100 for v in abundance2.values()]
-    min_abundance = min(all_values) if all_values else 0
-    max_abundance = max(all_values) if all_values else 1
-
-    def normalize(value, ratio):
-        if max_abundance == min_abundance:
-            return max_size
-        return min_size + (max_size - min_size) * (value * ratio / 100 - min_abundance) / (max_abundance - min_abundance)
-
-    normalized_abundance1 = {k: normalize(v, ratio1) for k, v in abundance1.items()}
-    normalized_abundance2 = {k: normalize(v, ratio2) for k, v in abundance2.items()}
-
-    return normalized_abundance1, normalized_abundance2
-
-# Logarithmic transform
-def logarithmic_transform(mw):
-    return 5.3779 * np.log(mw) - 6.4014
 
 # Title and description
 st.title("2D Gel Electrophoresis Analysis")
@@ -136,138 +63,128 @@ with st.sidebar:
     st.subheader("Capillary Analysis")
     num_capillaries = st.slider("Number of Capillaries", 1, 20, 8)
     
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("Download Results")
-    download_button = st.sidebar.button("Download All Results")
+    # Visualization settings
+    st.subheader("Visualization Settings")
+    smoothing_sigma = st.slider("Smoothing Factor", 1, 20, 5)
+    
+    # Line visibility controls
+    st.subheader("Capillary View Settings")
+    show_organism1 = st.checkbox(f"Show {organism1}", value=True)
+    show_organism2 = st.checkbox(f"Show {organism2}", value=True)
+    show_sum = st.checkbox("Show Sum", value=True)
+    
+    # Download section
+    st.markdown("---")
+    st.subheader("Download Results")
+    download_button = st.button("Download All Results")
 
 # Main app logic
 try:
-    # Get file paths
-    fasta_path1, abundance_path1 = get_file_paths(ORGANISMS[organism1])
-    fasta_path2, abundance_path2 = get_file_paths(ORGANISMS[organism2])
-
     with st.spinner("Processing data..."):
-        # Process FASTA files
-        sequences1 = parse_fasta(fasta_path1)
-        sequences2 = parse_fasta(fasta_path2)
+        # Process data for both organisms
+        properties1, abundance1 = process_organism_data(
+            ORGANISMS[organism1], min_mw, max_mw
+        )
+        properties2, abundance2 = process_organism_data(
+            ORGANISMS[organism2], min_mw, max_mw
+        )
         
-        if not sequences1 or not sequences2:
-            st.error("Error reading FASTA files. Please check the file paths.")
-            st.stop()
+        # Normalize abundances
+        normalized_abundance1, normalized_abundance2 = normalize_abundance(
+            abundance1, abundance2, ratio1, ratio2
+        )
         
-        # Filter and calculate properties
-        filtered_sequences1 = filter_sequences(sequences1)
-        filtered_sequences2 = filter_sequences(sequences2)
-        
-        protein_properties1 = calculate_properties(filtered_sequences1)
-        protein_properties2 = calculate_properties(filtered_sequences2)
-        
-        # Parse abundance data
-        abundance1 = parse_abundance(abundance_path1)
-        abundance2 = parse_abundance(abundance_path2)
-        
-        if not abundance1 or not abundance2:
-            st.error("Error reading abundance files. Please check the file paths.")
-            st.stop()
-
         # Create visualization tabs
         tab1, tab2 = st.tabs(["2D Gel Plot", "Capillary Analysis"])
-    
-    with tab1:
-        st.subheader("2D Gel Plot")
-        gel_fig = create_gel_plot(
-            protein_properties1, protein_properties2,
-            normalized_abundance1, normalized_abundance2,
-            organism1, organism2,
-            ratio1, ratio2
-        )
-        st.pyplot(gel_fig)
-    
-    with tab2:
-        st.subheader("Capillary Analysis")
-        capillary_figs = []
-        capillary_data = []
-        x_values = None
         
-        # Calculate capillary ranges
-        min_pI = min(min(prop[2] for prop in protein_properties1),
-                    min(prop[2] for prop in protein_properties2))
-        max_pI = max(max(prop[2] for prop in protein_properties1),
-                    max(prop[2] for prop in protein_properties2))
-        capillary_width = (max_pI - min_pI) / num_capillaries
+        with tab1:
+            st.subheader("2D Gel Plot")
+            gel_fig = create_gel_plot(
+                properties1, properties2,
+                normalized_abundance1, normalized_abundance2,
+                organism1, organism2,
+                ratio1, ratio2
+            )
+            st.pyplot(gel_fig)
         
-        # Create capillary plots
-        cols = st.columns(2)
-        for i in range(num_capillaries):
-            cap_start = min_pI + i * capillary_width
-            cap_end = min_pI + (i + 1) * capillary_width
+        with tab2:
+            st.subheader("Capillary Analysis")
+            capillary_figs = []
+            capillary_data = []
+            x_values = None
             
-            with cols[i % 2]:
-                st.write(f"Capillary {i + 1}: pI {cap_start:.2f} - {cap_end:.2f}")
-                
-                filtered_props1 = [prop for prop in protein_properties1
-                                 if cap_start <= prop[2] < cap_end]
-                filtered_props2 = [prop for prop in protein_properties2
-                                 if cap_start <= prop[2] < cap_end]
-                
-                fig, data, x_vals = create_capillary_plot(
-                    filtered_props1, filtered_props2,
-                    normalized_abundance1, normalized_abundance2,
-                    organism1, organism2,
-                    smoothing_sigma,
-                    show_organism1, show_organism2, show_sum
-                )
-                
-                capillary_figs.append(fig)
-                capillary_data.append(data)
-                if x_values is None:
-                    x_values = x_vals
-                
-                st.pyplot(fig)
-    
-    # Handle download if requested
-    if download_button:
-        parameters = {
-            'Analysis_Parameters': {
-                'min_molecular_weight': min_mw,
-                'max_molecular_weight': max_mw,
-                'min_normalized_abundance': min_normalized_abundance
-            },
-            'Sample_Ratios': {
-                organism1: ratio1,
-                organism2: ratio2
-            },
-            'Capillaries': {
-                f'capillary_{i+1}': {
-                    'pI_range': {
-                        'start': min_pI + i * capillary_width,
-                        'end': min_pI + (i + 1) * capillary_width
-                    }
-                } for i in range(num_capillaries)
-            },
-            'Visualization_Settings': {
-                'smoothing_factor': smoothing_sigma
+            # Calculate capillary ranges
+            min_pI, max_pI = get_pI_range(properties1, properties2)
+            capillary_ranges = calculate_capillary_ranges(min_pI, max_pI, num_capillaries)
+            
+            # Create capillary plots
+            cols = st.columns(2)
+            for i, (cap_start, cap_end) in enumerate(capillary_ranges):
+                with cols[i % 2]:
+                    st.write(f"Capillary {i + 1}: pI {cap_start:.2f} - {cap_end:.2f}")
+                    
+                    # Filter proteins for this capillary
+                    filtered_props1 = filter_by_pI_range(properties1, cap_start, cap_end)
+                    filtered_props2 = filter_by_pI_range(properties2, cap_start, cap_end)
+                    
+                    fig, data, x_vals = create_capillary_plot(
+                        filtered_props1, filtered_props2,
+                        normalized_abundance1, normalized_abundance2,
+                        organism1, organism2,
+                        smoothing_sigma,
+                        show_organism1, show_organism2, show_sum
+                    )
+                    
+                    capillary_figs.append(fig)
+                    capillary_data.append(data)
+                    if x_values is None:
+                        x_values = x_vals
+                    
+                    st.pyplot(fig)
+        
+        # Handle download if requested
+        if download_button:
+            parameters = {
+                'Analysis_Parameters': {
+                    'min_molecular_weight': min_mw,
+                    'max_molecular_weight': max_mw,
+                    'min_normalized_abundance': min_normalized_abundance
+                },
+                'Sample_Ratios': {
+                    organism1: ratio1,
+                    organism2: ratio2
+                },
+                'Capillaries': {
+                    f'capillary_{i+1}': {
+                        'pI_range': {
+                            'start': ranges[0],
+                            'end': ranges[1]
+                        }
+                    } for i, ranges in enumerate(capillary_ranges)
+                },
+                'Visualization_Settings': {
+                    'smoothing_factor': smoothing_sigma
+                }
             }
-        }
-        
-        zip_buffer = create_download_package(
-            parameters,
-            gel_fig,
-            capillary_figs,
-            capillary_data,
-            x_values,
-            organism1,
-            organism2
-        )
-        
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        st.sidebar.download_button(
-            label="Click to Download",
-            data=zip_buffer,
-            file_name=f'gel_analysis_{timestamp}.zip',
-            mime="application/zip"
-        )
-        
+            
+            zip_buffer = create_download_package(
+                parameters,
+                gel_fig,
+                capillary_figs,
+                capillary_data,
+                x_values,
+                organism1,
+                organism2
+            )
+            
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            st.sidebar.download_button(
+                label="Click to Download",
+                data=zip_buffer,
+                file_name=f'gel_analysis_{timestamp}.zip',
+                mime="application/zip"
+            )
+
 except Exception as e:
     st.error(f"An error occurred: {str(e)}")
     st.write("Please check that all data files are in the correct locations:")
@@ -292,8 +209,10 @@ st.markdown("""
    - Sample ratios
    - Abundance threshold
    - Number of capillaries
+   - Smoothing factor for capillary views
 3. View the results in the tabs above:
    - 2D Gel Plot tab shows the main visualization
    - Capillary Analysis tab shows individual capillary distributions
-4. The visualizations update automatically when you change any parameters
+4. Toggle visibility of different lines in capillary views
+5. Download all results using the download button
 """)
