@@ -13,11 +13,12 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Define organism mapping
-ORGANISMS = {
-    "S. cerevisiae": "4932",
-    "E. coli": "511145"
-}
+# Get available organisms
+ORGANISMS = scan_available_organisms()
+
+if not ORGANISMS:
+    st.error("No organism data found. Please check the data/abundance directory.")
+    st.stop()
 
 # Title and description
 st.title("2D Gel Electrophoresis Analysis")
@@ -29,16 +30,25 @@ with st.sidebar:
     
     # Organism selection
     st.subheader("Organism Selection")
+    available_organisms = list(ORGANISMS.keys())
+    
+    if len(available_organisms) < 2:
+        st.error("At least two organisms are required for comparison.")
+        st.stop()
+    
     organism1 = st.selectbox(
         "First Organism",
-        options=list(ORGANISMS.keys()),
+        options=available_organisms,
         index=0,
         key="organism1"
     )
+    
+    # Filter out the first selected organism from the second dropdown
+    remaining_organisms = [org for org in available_organisms if org != organism1]
     organism2 = st.selectbox(
         "Second Organism",
-        options=list(ORGANISMS.keys()),
-        index=1,
+        options=remaining_organisms,
+        index=0,
         key="organism2"
     )
     

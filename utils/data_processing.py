@@ -115,3 +115,36 @@ def calculate_capillary_ranges(min_pI, max_pI, num_capillaries):
 def filter_by_pI_range(properties, pI_start, pI_end):
     """Filter properties by pI range."""
     return [prop for prop in properties if pI_start <= prop[2] < pI_end]
+
+def scan_available_organisms():
+    """
+    Scan abundance folder for available organisms and return a dictionary mapping
+    organism names to their IDs.
+    """
+    organisms = {}
+    abundance_dir = os.path.join('data', 'abundance')
+    
+    if not os.path.exists(abundance_dir):
+        return organisms
+
+    # Scan all files in abundance directory
+    for filename in os.listdir(abundance_dir):
+        if filename.endswith('-WHOLE_ORGANISM-integrated.txt'):
+            filepath = os.path.join(abundance_dir, filename)
+            organism_id = filename.split('-')[0]  # Get ID from filename
+            
+            # Read the first few lines to get organism name
+            try:
+                with open(filepath, 'r') as file:
+                    for line in file:
+                        if line.startswith('#name:'):
+                            # Extract organism name from the line
+                            full_name = line.split('-')[0].replace('#name:', '').strip()
+                            # Add to dictionary
+                            organisms[full_name] = organism_id
+                            break
+            except Exception as e:
+                print(f"Error reading {filename}: {str(e)}")
+                continue
+    
+    return organisms
