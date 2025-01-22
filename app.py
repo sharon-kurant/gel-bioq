@@ -2,13 +2,7 @@ import streamlit as st
 from datetime import datetime
 
 # Import utility functions
-from utils.data_processing import (
-    process_organism_data,
-    normalize_abundance,
-    calculate_capillary_ranges,
-    filter_by_pI_range,
-    get_pI_range
-)
+from utils.data_processing import *
 from utils.visualization import create_gel_plot, create_capillary_plot
 from utils.export import create_download_package
 
