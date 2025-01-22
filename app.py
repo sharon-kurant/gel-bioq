@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from Bio import SeqIO
 from Bio.SeqUtils.ProtParam import ProteinAnalysis
 from scipy.stats import norm
+from scipy.ndimage import gaussian_filter1d
 
 # Page configuration
 st.set_page_config(
@@ -214,6 +215,15 @@ try:
         with tab2:
             st.subheader("Capillary Analysis")
             
+            # Add line visibility controls in sidebar
+            st.sidebar.subheader("Capillary View Settings")
+            show_organism1 = st.sidebar.checkbox(f"Show {organism1}", value=True)
+            show_organism2 = st.sidebar.checkbox(f"Show {organism2}", value=True)
+            show_sum = st.sidebar.checkbox("Show Sum", value=True)
+            
+            # Add smoothing control
+            smoothing_sigma = st.sidebar.slider("Smoothing Factor", 1, 20, 5)
+            
             # Calculate capillary ranges
             min_pI = min(
                 min(prop[2] for prop in protein_properties1),
@@ -244,9 +254,9 @@ try:
                         if cap_start <= prop[2] < cap_end
                     ]
                     
-                    # Create capillary plot
+                    # Create capillary plot with higher resolution
                     fig, ax = plt.subplots(figsize=(6, 4))
-                    x_values = np.linspace(0, 20, 1000)
+                    x_values = np.linspace(0, 20, 2000)  # Increased resolution
                     y1 = np.zeros_like(x_values)
                     y2 = np.zeros_like(x_values)
                     
@@ -255,24 +265,51 @@ try:
                         protein_id, mw, pi = prop
                         abundance = normalized_abundance1.get(protein_id, 0)
                         if abundance > 0 and mw > 0:
-                            gaussian = norm.pdf(x_values, loc=mw/1000, scale=max(abundance/100, 0.01))
+                            gaussian = norm.pdf(x_values, loc=mw/1000, 
+                                            scale=max(abundance/100, 0.01))
                             y1 += gaussian * abundance
                     
                     for prop in filtered_props2:
                         protein_id, mw, pi = prop
                         abundance = normalized_abundance2.get(protein_id, 0)
                         if abundance > 0 and mw > 0:
-                            gaussian = norm.pdf(x_values, loc=mw/1000, scale=max(abundance/100, 0.01))
+                            gaussian = norm.pdf(x_values, loc=mw/1000, 
+                                            scale=max(abundance/100, 0.01))
                             y2 += gaussian * abundance
                     
-                    plt.plot(x_values, y1, color='blue', label=organism1)
-                    plt.plot(x_values, y2, color='red', label=organism2)
+                    # Apply smoothing
+                    y1_smooth = gaussian_filter1d(y1, sigma=smoothing_sigma)
+                    y2_smooth = gaussian_filter1d(y2, sigma=smoothing_sigma)
+                    y_sum = gaussian_filter1d(y1 + y2, sigma=smoothing_sigma)
+                    
+                    # Plot lines based on visibility settings
+                    if show_organism1:
+                        plt.plot(x_values, y1_smooth, color='blue', 
+                                label=organism1, linewidth=1.5)
+                    if show_organism2:
+                        plt.plot(x_values, y2_smooth, color='red', 
+                                label=organism2, linewidth=1.5)
+                    if show_sum:
+                        plt.plot(x_values, y_sum, color='green', 
+                                label='Sum', linewidth=2, alpha=0.7)
+                    
+                    # Set plot properties
                     plt.title(f'Capillary {i + 1}')
                     plt.xlabel('Molecular Weight (kDa)')
                     plt.ylabel('Volume')
-                    plt.legend()
+                    if show_organism1 or show_organism2 or show_sum:
+                        plt.legend()
                     plt.grid(True, linestyle='--', linewidth=0.5)
                     
+                    # Set y-axis limits
+                    max_y = max(
+                        max(y1_smooth) if show_organism1 else 0,
+                        max(y2_smooth) if show_organism2 else 0,
+                        max(y_sum) if show_sum else 0
+                    )
+                    plt.ylim(0, max_y * 1.1)  # Add 10% padding
+                    
+                    # Display plot
                     st.pyplot(fig)
                     plt.close()
 
