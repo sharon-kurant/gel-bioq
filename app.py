@@ -74,7 +74,7 @@ with st.sidebar:
     st.subheader("Augmentation Settings")
     augmentation_type = st.radio(
         "Select Augmentation Type",
-        options=["None", "pI Normalization", "MW Stretching"]
+        options=["None", "pI Shift", "MW Stretching"]
     )
     
     if augmentation_type == "pI Shift":
