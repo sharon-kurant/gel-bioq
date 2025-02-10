@@ -58,6 +58,9 @@ with st.sidebar:
     max_mw = st.number_input("Maximum Molecular Weight", value=500000.0)
     min_normalized_abundance = st.number_input("Minimum Normalized Abundance", value=2.0)
     
+    # Gaussian parameter
+    gaussian_std = st.slider("Gaussian Standard Deviation", 0.01, 1.0, 0.01, 0.01)
+    
     # Sample ratios
     st.subheader("Sample Ratios")
     ratio1 = st.slider(f"{organism1} Ratio (%)", 0, 100, 95)
@@ -65,7 +68,19 @@ with st.sidebar:
     
     # Capillary settings
     st.subheader("Capillary Analysis")
-    num_capillaries = st.slider("Number of Capillaries", 1, 20, 8)
+    num_capillaries = st.slider("Number of Capillaries", 1, 100, 8)
+    
+    # Augmentation settings
+    st.subheader("Augmentation Settings")
+    augmentation_type = st.radio(
+        "Select Augmentation Type",
+        options=["None", "pI Normalization", "MW Stretching"]
+    )
+    
+    if augmentation_type == "pI Normalization":
+        st.info("pI values will be normalized to range [0-1]")
+    elif augmentation_type == "MW Stretching":
+        st.info("Molecular weights will be stretched to fill the visualization space")
     
     # Visualization settings
     st.subheader("Visualization Settings")
