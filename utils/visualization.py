@@ -15,8 +15,7 @@ def create_gel_plot(
     augmentation_type=None
 ):
     """Create 2D gel plot with optional augmentations."""
-    fig = plt.figure(figsize=(12, 8))
-    ax = fig.add_subplot(111)
+    fig, ax = plt.subplots(figsize=(12, 8))
     
     # Store data for export
     plot_data = {
@@ -39,24 +38,23 @@ def create_gel_plot(
             plot_data['mw_values'].extend(mw)
             plot_data['abundance1' if label == organism1 else 'abundance2'].extend(sizes)
             
-            ax.scatter(pi, log_mw, alpha=0.5, color=color, s=sizes, 
+            plt.scatter(pi, log_mw, alpha=0.5, color=color, s=sizes, 
                       label=f'{label} ({ratio}%)')
     
     plot_organism(properties1, normalized_abundance1, 'blue', organism1, ratio1)
     plot_organism(properties2, normalized_abundance2, 'red', organism2, ratio2)
     
-    ax.set_title('2-D Gel Plot')
-    ax.set_xlabel('Isoelectric Point (pI)')
-    ax.set_ylabel('Molecular Weight (kDa)')
-    ax.legend()
-    ax.grid(True, linestyle='--', linewidth=0.5)
+    plt.title('2-D Gel Plot')
+    plt.xlabel('Isoelectric Point (pI)')
+    plt.ylabel('Molecular Weight (kDa)')
+    plt.legend()
+    plt.grid(True, linestyle='--', linewidth=0.5)
     
     # Set y-axis labels
-    yticks = ax.get_yticks()
+    yticks = plt.gca().get_yticks()
     ytick_labels = [f'{int(np.exp((tick + 6.4014) / 5.3779)):.0f}' for tick in yticks]
-    ax.set_yticklabels(ytick_labels)
+    plt.gca().set_yticklabels(ytick_labels)
     
-    plt.tight_layout()
     return fig, plot_data
 
 def create_capillary_plot(
@@ -73,9 +71,7 @@ def create_capillary_plot(
     show_sum
 ):
     """Create capillary plot with updated parameters."""
-    fig = plt.figure(figsize=(6, 4))
-    ax = fig.add_subplot(111)
-    
+    fig, ax = plt.subplots(figsize=(6, 4))
     x_values = np.linspace(0, 20, 2000)
     y1 = np.zeros_like(x_values)
     y2 = np.zeros_like(x_values)
@@ -99,21 +95,21 @@ def create_capillary_plot(
     y_sum = gaussian_filter1d(y1 + y2, sigma=smoothing_sigma)
     
     if show_organism1:
-        ax.plot(x_values, y1_smooth, color='blue', 
+        plt.plot(x_values, y1_smooth, color='blue', 
                 label=organism1, linewidth=1.5)
     if show_organism2:
-        ax.plot(x_values, y2_smooth, color='red', 
+        plt.plot(x_values, y2_smooth, color='red', 
                 label=organism2, linewidth=1.5)
     if show_sum:
-        ax.plot(x_values, y_sum, color='green', 
+        plt.plot(x_values, y_sum, color='green', 
                 label='Sum', linewidth=2, alpha=0.7)
     
-    ax.set_title('Capillary View')
-    ax.set_xlabel('Molecular Weight (kDa)')
-    ax.set_ylabel('Volume')
+    plt.title('Capillary View')
+    plt.xlabel('Molecular Weight (kDa)')
+    plt.ylabel('Volume')
     if show_organism1 or show_organism2 or show_sum:
-        ax.legend()
-    ax.grid(True, linestyle='--', linewidth=0.5)
+        plt.legend()
+    plt.grid(True, linestyle='--', linewidth=0.5)
     
     # Set reasonable y-axis limits
     max_y = max(
@@ -121,9 +117,8 @@ def create_capillary_plot(
         max(y2_smooth) if show_organism2 else 0,
         max(y_sum) if show_sum else 0
     )
-    ax.set_ylim(0, max_y * 1.1)
+    plt.ylim(0, max_y * 1.1)
     
-    plt.tight_layout()
     return fig, {'y1': y1_smooth, 'y2': y2_smooth, 'y_sum': y_sum}, x_values
 
 def logarithmic_transform(mw):
