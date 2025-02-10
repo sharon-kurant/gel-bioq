@@ -47,13 +47,22 @@ def create_download_package(
         zip_file.writestr(f'2d_gel_plot_{timestamp}.png', gel_plot_bytes.getvalue())
         
         # Save 2D gel plot data as CSV
+        # Fill missing values with NaN for proper alignment
+        max_length = max(len(gel_plot_data['protein_ids']),
+                        len(gel_plot_data['pI_values']),
+                        len(gel_plot_data['mw_values']),
+                        len(gel_plot_data['abundance1']),
+                        len(gel_plot_data.get('abundance2', [])))
+        
         df_gel = pd.DataFrame({
-            'Protein_ID': gel_plot_data['protein_ids'],
-            'pI': gel_plot_data['pI_values'],
-            'MW_kDa': gel_plot_data['mw_values'],
-            f'{organism1}_abundance': gel_plot_data['abundance1'],
-            f'{organism2}_abundance': gel_plot_data['abundance2']
+            'Protein_ID': gel_plot_data['protein_ids'] + [None] * (max_length - len(gel_plot_data['protein_ids'])),
+            'pI': gel_plot_data['pI_values'] + [None] * (max_length - len(gel_plot_data['pI_values'])),
+            'MW_kDa': gel_plot_data['mw_values'] + [None] * (max_length - len(gel_plot_data['mw_values'])),
+            f'{organism1}_abundance': gel_plot_data['abundance1'] + [None] * (max_length - len(gel_plot_data['abundance1'])),
+            f'{organism2}_abundance': (gel_plot_data.get('abundance2', []) + [None] * 
+                                     (max_length - len(gel_plot_data.get('abundance2', []))))
         })
+        
         csv_buffer = io.StringIO()
         df_gel.to_csv(csv_buffer, index=False)
         zip_file.writestr(f'2d_gel_data_{timestamp}.csv', csv_buffer.getvalue())

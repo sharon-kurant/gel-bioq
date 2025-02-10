@@ -33,6 +33,20 @@ def create_gel_plot(
             sizes = [abundances.get(prop[0], 1) for prop in properties]
             
             # Store data for export
+            if label == organism1:
+                plot_data['protein_ids'].extend([prop[0] for prop in properties])
+                plot_data['pI_values'].extend(pi)
+                plot_data['mw_values'].extend([mw_val/1000 for mw_val in mw])  # Convert to kDa
+                plot_data['abundance1'].extend(sizes)
+                plot_data['abundance2'].extend([0] * len(properties))  # Fill with zeros for alignment
+            else:
+                plot_data['protein_ids'].extend([prop[0] for prop in properties])
+                plot_data['pI_values'].extend(pi)
+                plot_data['mw_values'].extend([mw_val/1000 for mw_val in mw])  # Convert to kDa
+                plot_data['abundance1'].extend([0] * len(properties))  # Fill with zeros for alignment
+                plot_data['abundance2'].extend(sizes)
+            
+            # Store data for export
             plot_data['protein_ids'].extend([prop[0] for prop in properties])
             plot_data['pI_values'].extend(pi)
             plot_data['mw_values'].extend([mw_val/1000 for mw_val in mw])  # Convert to kDa for export
