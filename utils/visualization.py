@@ -65,7 +65,7 @@ def create_capillary_plot(
     organism1,
     organism2,
     smoothing_sigma,
-    gaussian_std,  # Added parameter
+    gaussian_std,
     show_organism1,
     show_organism2,
     show_sum
@@ -86,7 +86,7 @@ def create_capillary_plot(
             abundance = abundances.get(protein_id, 0)
             if abundance > 0 and mw > 0:
                 gaussian = norm.pdf(x_values, loc=mw/1000, 
-                                 scale=gaussian_std)  # Use provided gaussian_std
+                                 scale=max(abundance/100, 0.01))  # Revert to original scale calculation
                 y_values += gaussian * abundance
     
     # Apply smoothing
