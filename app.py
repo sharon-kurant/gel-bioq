@@ -77,8 +77,17 @@ with st.sidebar:
         options=["None", "pI Normalization", "MW Stretching"]
     )
     
-    if augmentation_type == "pI Normalization":
-        st.info("pI values will be normalized to range [0-1]")
+    if augmentation_type == "pI Shift":
+        pI_shift = st.slider(
+            "pI Shift Amount",
+            min_value=-1.0,
+            max_value=1.0,
+            value=0.0,
+            step=0.1,
+            help="Shift pI values left (negative) or right (positive)"
+        )
+        if abs(pI_shift) > 0:
+            st.info("Points will be shifted while ensuring all remain visible in the plot")
     elif augmentation_type == "MW Stretching":
         st.info("Molecular weights will be stretched to fill the visualization space")
     

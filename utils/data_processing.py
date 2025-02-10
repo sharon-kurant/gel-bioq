@@ -148,3 +148,45 @@ def scan_available_organisms():
                 continue
     
     return organisms
+
+def shift_pI(properties, shift_amount):
+    """
+    Shift pI values by a specified amount (-1 to +1).
+    Ensures all points remain visible after shifting.
+    """
+    # First find the pI range to ensure we don't lose points
+    pI_values = [prop[2] for prop in properties]
+    min_pI = min(pI_values)
+    max_pI = max(pI_values)
+    
+    # If shifting would push points out of visible range, adjust the shift
+    if min_pI + shift_amount < 0:
+        shift_amount = -min_pI  # Limit shift to keep minimum pI at 0
+    elif max_pI + shift_amount > 14:  # Assuming max pI scale is 14
+        shift_amount = 14 - max_pI  # Limit shift to keep maximum pI at 14
+    
+    # Create new properties with shifted pI
+    shifted_properties = []
+    for prop in properties:
+        protein_id, mw, pI = prop
+        shifted_pI = pI + shift_amount
+        shifted_properties.append((protein_id, mw, shifted_pI))
+    
+    return shifted_properties, shift_amount  # Return actual shift amount used
+
+def stretch_MW(properties):
+    """Stretch molecular weights to fill visualization space."""
+    # Extract all MW values
+    mw_values = [prop[1] for prop in properties]
+    min_mw = min(mw_values)
+    max_mw = max(mw_values)
+    mw_range = max_mw - min_mw
+    
+    # Create new properties with stretched MW
+    stretched_properties = []
+    for prop in properties:
+        protein_id, mw, pI = prop
+        stretched_mw = (mw - min_mw) / mw_range * max_mw if mw_range != 0 else mw
+        stretched_properties.append((protein_id, stretched_mw, pI))
+    
+    return stretched_properties
