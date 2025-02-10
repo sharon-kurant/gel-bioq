@@ -117,6 +117,12 @@ try:
             ORGANISMS[organism2], min_mw, max_mw
         )
         
+        # Apply pI shift if selected
+        if augmentation_type == "pI Shift":
+            properties1, actual_shift = shift_pI(properties1, pI_shift)
+            properties2, _ = shift_pI(properties2, pI_shift)
+            st.info(f"Applied pI shift of {actual_shift:.2f} units")
+        
         # Normalize abundances
         normalized_abundance1, normalized_abundance2 = normalize_abundance(
             abundance1, abundance2, ratio1, ratio2
@@ -127,11 +133,12 @@ try:
         
         with tab1:
             st.subheader("2D Gel Plot")
-            gel_fig = create_gel_plot(
+            gel_fig, gel_data = create_gel_plot(
                 properties1, properties2,
                 normalized_abundance1, normalized_abundance2,
                 organism1, organism2,
-                ratio1, ratio2
+                ratio1, ratio2,
+                augmentation_type
             )
             st.pyplot(gel_fig)
         
@@ -160,6 +167,7 @@ try:
                         normalized_abundance1, normalized_abundance2,
                         organism1, organism2,
                         smoothing_sigma,
+                        gaussian_std,
                         show_organism1, show_organism2, show_sum
                     )
                     
@@ -176,7 +184,9 @@ try:
                 'Analysis_Parameters': {
                     'min_molecular_weight': min_mw,
                     'max_molecular_weight': max_mw,
-                    'min_normalized_abundance': min_normalized_abundance
+                    'min_normalized_abundance': min_normalized_abundance,
+                    'gaussian_std': gaussian_std,
+                    'pI_shift': pI_shift if augmentation_type == "pI Shift" else 0
                 },
                 'Sample_Ratios': {
                     organism1: ratio1,
@@ -196,13 +206,14 @@ try:
             }
             
             zip_buffer = create_download_package(
-                parameters,
-                gel_fig,
-                capillary_figs,
-                capillary_data,
-                x_values,
-                organism1,
-                organism2
+                parameters=parameters,
+                gel_plot_fig=gel_fig,
+                gel_plot_data=gel_data,
+                capillary_figs=capillary_figs,
+                capillary_data=capillary_data,
+                x_values=x_values,
+                organism1=organism1,
+                organism2=organism2
             )
             
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -212,6 +223,7 @@ try:
                 file_name=f'gel_analysis_{timestamp}.zip',
                 mime="application/zip"
             )
+
 
 except Exception as e:
     st.error(f"An error occurred: {str(e)}")
