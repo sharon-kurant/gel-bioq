@@ -198,14 +198,16 @@ def scale_MW(properties, scale_factor):
         scaled_properties.append((protein_id, (mw, scaled_mw), pI))
     return scaled_properties
 
-# def shift_pI(properties, shift_amount):
-#     """
-#     Shift pI values by a specified amount (-1 to +1).
-#     Returns properties with both original and shifted pI values.
-#     """
-#     shifted_properties = []
-#     for protein_id, mw, original_pI in properties:
-#         shifted_pI = original_pI + shift_amount
-#         # Keep the same 3-value tuple structure but store both pIs in the third position
-#         shifted_properties.append((protein_id, mw, (original_pI, shifted_pI)))
-#     return shifted_properties, shift_amount
+def add_mw_noise(properties):
+    """
+    Add random noise to molecular weights (-50% to +50%).
+    Returns new properties list with noisy MW values.
+    """
+    noisy_properties = []
+    for prop in properties:
+        protein_id, mw, pI = prop
+        # Generate random factor between 0.5 and 1.5 (±50%)
+        noise_factor = np.random.uniform(0.5, 1.5)
+        noisy_mw = mw * noise_factor
+        noisy_properties.append((protein_id, noisy_mw, pI))
+    return noisy_properties
