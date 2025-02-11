@@ -133,7 +133,7 @@ try:
     with st.spinner("Processing data..."):
         # Process data for both organisms
         properties1, abundance1 = process_organism_data(
-        ORGANISMS[organism1], min_mw, max_mw
+            ORGANISMS[organism1], min_mw, max_mw
         )
         properties2, abundance2 = process_organism_data(
             ORGANISMS[organism2], min_mw, max_mw
@@ -144,9 +144,9 @@ try:
             properties1 = add_mw_noise(properties1)
             properties2 = add_mw_noise(properties2)
         
-        # Store original properties for capillary ranges
-        original_properties1 = properties1
-        original_properties2 = properties2
+        # Store original properties for capillary calculations
+        original_properties1 = properties1.copy()
+        original_properties2 = properties2.copy()
         
         # Apply pI shift if selected
         if augmentation_type == "pI Shift":
@@ -182,7 +182,7 @@ try:
             x_values = None
             
             # Calculate capillary ranges
-            min_pI, max_pI = get_pI_range(properties1, properties2)
+            min_pI, max_pI = get_pI_range(original_properties1, original_properties2)
             capillary_ranges = calculate_capillary_ranges(min_pI, max_pI, num_capillaries)
             
             # Create capillary plots
@@ -191,7 +191,7 @@ try:
                 with cols[i % 2]:
                     st.write(f"Capillary {i + 1}: pI {cap_start:.2f} - {cap_end:.2f}")
                     
-                    # Filter proteins for this capillary
+                    # Filter proteins based on their original positions
                     filtered_props1 = filter_by_pI_range(properties1, cap_start, cap_end)
                     filtered_props2 = filter_by_pI_range(properties2, cap_start, cap_end)
                     
@@ -202,7 +202,7 @@ try:
                         smoothing_sigma,
                         gaussian_std,
                         show_organism1, show_organism2, show_sum,
-                        cap_start, cap_end  
+                        cap_start, cap_end  # These are from original pI ranges
                     )
                     
                     capillary_figs.append(fig)
