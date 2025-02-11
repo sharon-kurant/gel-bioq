@@ -1,6 +1,7 @@
 import os
 from Bio import SeqIO
 from Bio.SeqUtils.ProtParam import ProteinAnalysis
+import numpy as np
 
 def get_file_paths(organism_id):
     """Get file paths for FASTA and abundance files."""
