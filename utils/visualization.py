@@ -91,7 +91,8 @@ def create_capillary_plot(
     show_organism2,
     show_sum,
     cap_start,
-    cap_end
+    cap_end,
+    mw_scale=1.0  # Add MW scale parameter
 ):
     """Create capillary plot."""
     fig, ax = plt.subplots(figsize=(6, 4))
@@ -99,27 +100,31 @@ def create_capillary_plot(
     y1 = np.zeros_like(x_values)
     y2 = np.zeros_like(x_values)
     
+    # Adjust the Gaussian spread based on MW scale
+    effective_std = max(abundance/100, 0.01)
+    if mw_scale != 1.0:
+        # When stretched (mw_scale > 1), increase spread
+        # When squeezed (mw_scale < 1), decrease spread
+        effective_std = effective_std * mw_scale
+    
     # Calculate distributions
     for props, abundances, y_values in [
         (filtered_props1, normalized_abundance1, y1),
         (filtered_props2, normalized_abundance2, y2)
     ]:
         for prop in props:
-            protein_id, mw, pI_tuple = prop
-            original_pI, current_pI = pI_tuple if isinstance(pI_tuple, tuple) else (pI_tuple, pI_tuple)
-            
-            # If the protein originally belonged to this capillary
-            if cap_start <= original_pI < cap_end:
-                abundance = abundances.get(protein_id, 0)
-                if abundance > 0 and mw > 0:
-                    gaussian = norm.pdf(x_values, loc=mw/1000, 
-                                     scale=max(abundance/100, 0.01))
-                    y_values += gaussian * abundance
+            protein_id, mw, pI = prop
+            abundance = abundances.get(protein_id, 0)
+            if abundance > 0 and mw > 0:
+                gaussian = norm.pdf(x_values, loc=mw/1000, 
+                                 scale=effective_std)
+                y_values += gaussian * abundance
     
-    # Apply smoothing
-    y1_smooth = gaussian_filter1d(y1, sigma=smoothing_sigma)
-    y2_smooth = gaussian_filter1d(y2, sigma=smoothing_sigma)
-    y_sum = gaussian_filter1d(y1 + y2, sigma=smoothing_sigma)
+    # Apply smoothing - adjust based on MW scale
+    adjusted_sigma = smoothing_sigma * mw_scale
+    y1_smooth = gaussian_filter1d(y1, sigma=adjusted_sigma)
+    y2_smooth = gaussian_filter1d(y2, sigma=adjusted_sigma)
+    y_sum = gaussian_filter1d(y1 + y2, sigma=adjusted_sigma)
     
     # Plot lines based on visibility settings
     if show_organism1:
@@ -132,7 +137,6 @@ def create_capillary_plot(
         plt.plot(x_values, y_sum, color='green', 
                 label='Sum', linewidth=2, alpha=0.7)
     
-    # Add capillary range to title
     plt.title(f'Capillary: pI range ({cap_start:.2f} - {cap_end:.2f})')
     plt.xlabel('Molecular Weight (kDa)')
     plt.ylabel('Volume')

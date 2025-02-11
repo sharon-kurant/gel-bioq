@@ -195,6 +195,7 @@ try:
                     filtered_props1 = filter_by_pI_range(properties1, cap_start, cap_end)
                     filtered_props2 = filter_by_pI_range(properties2, cap_start, cap_end)
                     
+                    # create_capillary_plot
                     fig, data, x_vals = create_capillary_plot(
                         filtered_props1, filtered_props2,
                         normalized_abundance1, normalized_abundance2,
@@ -202,7 +203,8 @@ try:
                         smoothing_sigma,
                         gaussian_std,
                         show_organism1, show_organism2, show_sum,
-                        cap_start, cap_end  # These are from original pI ranges
+                        cap_start, cap_end,
+                        mw_scale=mw_scale if augmentation_type == "MW Scale" else 1.0
                     )
                     
                     capillary_figs.append(fig)
