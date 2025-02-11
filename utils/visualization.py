@@ -28,31 +28,35 @@ def create_gel_plot(
     
     def plot_organism(properties, abundances, color, label, ratio):
         if properties:
-            pi, mw = zip(*[(prop[2], prop[1]) for prop in properties])
+            # Check if we have shifted pI values (tuple of length 4)
+            if properties and len(properties[0]) > 3:
+                # Use shifted pI (index 3) for plotting, but keep original pI (index 2) for data
+                pi_plot = [prop[3] for prop in properties]  # shifted pI for plotting
+                pi_data = [prop[2] for prop in properties]  # original pI for data
+                mw = [prop[1] for prop in properties]
+            else:
+                # No shift, use regular pI (index 2)
+                pi_plot = pi_data = [prop[2] for prop in properties]
+                mw = [prop[1] for prop in properties]
+
             log_mw = [logarithmic_transform(mw_val) for mw_val in mw]
             sizes = [abundances.get(prop[0], 1) for prop in properties]
             
             # Store data for export
             if label == organism1:
                 plot_data['protein_ids'].extend([prop[0] for prop in properties])
-                plot_data['pI_values'].extend(pi)
+                plot_data['pI_values'].extend(pi_data)  # Store original pI
                 plot_data['mw_values'].extend([mw_val/1000 for mw_val in mw])  # Convert to kDa
                 plot_data['abundance1'].extend(sizes)
                 plot_data['abundance2'].extend([0] * len(properties))  # Fill with zeros for alignment
             else:
                 plot_data['protein_ids'].extend([prop[0] for prop in properties])
-                plot_data['pI_values'].extend(pi)
+                plot_data['pI_values'].extend(pi_data)  # Store original pI
                 plot_data['mw_values'].extend([mw_val/1000 for mw_val in mw])  # Convert to kDa
                 plot_data['abundance1'].extend([0] * len(properties))  # Fill with zeros for alignment
                 plot_data['abundance2'].extend(sizes)
             
-            # Store data for export
-            plot_data['protein_ids'].extend([prop[0] for prop in properties])
-            plot_data['pI_values'].extend(pi)
-            plot_data['mw_values'].extend([mw_val/1000 for mw_val in mw])  # Convert to kDa for export
-            plot_data['abundance1' if label == organism1 else 'abundance2'].extend(sizes)
-            
-            plt.scatter(pi, log_mw, alpha=0.5, color=color, s=sizes, 
+            plt.scatter(pi_plot, log_mw, alpha=0.5, color=color, s=sizes, 
                       label=f'{label} ({ratio}%)')
     
     plot_organism(protein_properties1, normalized_abundance1, 'blue', organism1, ratio1)

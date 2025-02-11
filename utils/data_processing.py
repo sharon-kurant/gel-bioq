@@ -100,11 +100,13 @@ def filter_by_abundance(properties, abundance, min_abundance):
     return [prop for prop in properties if abundance.get(prop[0], 0) >= min_abundance]
 
 def get_pI_range(properties1, properties2):
-    """Calculate the overall pI range for both organisms."""
-    all_pIs = (
-        [prop[2] for prop in properties1] +
-        [prop[2] for prop in properties2]
-    )
+    """Calculate the overall pI range using original pI values."""
+    all_pIs = []
+    for props in [properties1, properties2]:
+        if props and len(props[0]) > 3:  # If properties contain both original and shifted pI
+            all_pIs.extend([prop[2] for prop in props])  # Use original pI (index 2)
+        else:
+            all_pIs.extend([prop[2] for prop in props])  # Use the only pI value
     return min(all_pIs), max(all_pIs)
 
 def calculate_capillary_ranges(min_pI, max_pI, num_capillaries):
@@ -114,8 +116,14 @@ def calculate_capillary_ranges(min_pI, max_pI, num_capillaries):
             for i in range(num_capillaries)]
 
 def filter_by_pI_range(properties, pI_start, pI_end):
-    """Filter properties by pI range."""
-    return [prop for prop in properties if pI_start <= prop[2] < pI_end]
+    """
+    Filter properties by original pI range but keep shifted values for plotting.
+    """
+    if properties and len(properties[0]) > 3:  # If properties contain both original and shifted pI
+        return [prop for prop in properties if pI_start <= prop[2] < pI_end]  # Filter by original pI
+    else:
+        return [prop for prop in properties if pI_start <= prop[2] < pI_end]
+
 
 def scan_available_organisms():
     """
@@ -153,27 +161,16 @@ def scan_available_organisms():
 def shift_pI(properties, shift_amount):
     """
     Shift pI values by a specified amount (-1 to +1).
-    Ensures all points remain visible after shifting.
+    Returns properties with both original and shifted pI values.
     """
-    # First find the pI range to ensure we don't lose points
-    pI_values = [prop[2] for prop in properties]
-    min_pI = min(pI_values)
-    max_pI = max(pI_values)
-    
-    # If shifting would push points out of visible range, adjust the shift
-    if min_pI + shift_amount < 0:
-        shift_amount = -min_pI  # Limit shift to keep minimum pI at 0
-    elif max_pI + shift_amount > 14:  # Assuming max pI scale is 14
-        shift_amount = 14 - max_pI  # Limit shift to keep maximum pI at 14
-    
-    # Create new properties with shifted pI
     shifted_properties = []
     for prop in properties:
-        protein_id, mw, pI = prop
-        shifted_pI = pI + shift_amount
-        shifted_properties.append((protein_id, mw, shifted_pI))
-    
-    return shifted_properties, shift_amount  # Return actual shift amount used
+        protein_id, mw, original_pI = prop
+        shifted_pI = original_pI + shift_amount
+        # Store both original and shifted pI values
+        shifted_properties.append((protein_id, mw, original_pI, shifted_pI))
+    return shifted_properties, shift_amount
+
 
 def stretch_MW(properties):
     """Stretch molecular weights to fill visualization space."""

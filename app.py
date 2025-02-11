@@ -117,7 +117,7 @@ try:
     with st.spinner("Processing data..."):
         # Process data for both organisms
         properties1, abundance1 = process_organism_data(
-            ORGANISMS[organism1], min_mw, max_mw
+        ORGANISMS[organism1], min_mw, max_mw
         )
         properties2, abundance2 = process_organism_data(
             ORGANISMS[organism2], min_mw, max_mw
@@ -128,11 +128,16 @@ try:
             properties1 = add_mw_noise(properties1)
             properties2 = add_mw_noise(properties2)
         
+        # Store original properties for capillary ranges
+        original_properties1 = properties1
+        original_properties2 = properties2
+        
         # Apply pI shift if selected
         if augmentation_type == "pI Shift":
             properties1, actual_shift = shift_pI(properties1, pI_shift)
             properties2, _ = shift_pI(properties2, pI_shift)
             st.info(f"Applied pI shift of {actual_shift:.2f} units")
+    
         
         # Normalize abundances
         normalized_abundance1, normalized_abundance2 = normalize_abundance(
@@ -159,9 +164,10 @@ try:
             capillary_data = []
             x_values = None
             
-            # Calculate capillary ranges
-            min_pI, max_pI = get_pI_range(properties1, properties2)
+            # Calculate capillary ranges using original pI values
+            min_pI, max_pI = get_pI_range(original_properties1, original_properties2)
             capillary_ranges = calculate_capillary_ranges(min_pI, max_pI, num_capillaries)
+    
             
             # Create capillary plots
             cols = st.columns(2)
