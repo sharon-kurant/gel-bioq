@@ -124,7 +124,7 @@ try:
         )
         
         # Apply noise if enabled
-        if add_mw_noise:
+        if enable_mw_noise:
             properties1 = add_mw_noise(properties1)
             properties2 = add_mw_noise(properties2)
         
@@ -197,7 +197,7 @@ try:
                     'max_molecular_weight': max_mw,
                     'min_normalized_abundance': min_normalized_abundance,
                     'gaussian_std': gaussian_std,
-                    'mw_noise_enabled': add_mw_noise,
+                    'mw_noise_enabled': enable_mw_noise,
                     'pI_shift': pI_shift if augmentation_type == "pI Shift" else 0
                 },
                 'Sample_Ratios': {
