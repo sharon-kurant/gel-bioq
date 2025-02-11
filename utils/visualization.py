@@ -92,20 +92,13 @@ def create_capillary_plot(
     show_sum,
     cap_start,
     cap_end,
-    mw_scale=1.0  # Add MW scale parameter
+    mw_scale=1.0
 ):
     """Create capillary plot."""
     fig, ax = plt.subplots(figsize=(6, 4))
     x_values = np.linspace(0, 20, 2000)
     y1 = np.zeros_like(x_values)
     y2 = np.zeros_like(x_values)
-    
-    # Adjust the Gaussian spread based on MW scale
-    effective_std = max(abundance/100, 0.01)
-    if mw_scale != 1.0:
-        # When stretched (mw_scale > 1), increase spread
-        # When squeezed (mw_scale < 1), decrease spread
-        effective_std = effective_std * mw_scale
     
     # Calculate distributions
     for props, abundances, y_values in [
@@ -116,6 +109,13 @@ def create_capillary_plot(
             protein_id, mw, pI = prop
             abundance = abundances.get(protein_id, 0)
             if abundance > 0 and mw > 0:
+                # Calculate effective standard deviation for this protein
+                effective_std = max(abundance/100, 0.01)
+                if mw_scale != 1.0:
+                    # When stretched (mw_scale > 1), increase spread
+                    # When squeezed (mw_scale < 1), decrease spread
+                    effective_std = effective_std * mw_scale
+                
                 gaussian = norm.pdf(x_values, loc=mw/1000, 
                                  scale=effective_std)
                 y_values += gaussian * abundance
