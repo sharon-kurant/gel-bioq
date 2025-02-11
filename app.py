@@ -90,6 +90,12 @@ with st.sidebar:
             st.info("Points will be shifted while ensuring all remain visible in the plot")
     elif augmentation_type == "MW Stretching":
         st.info("Molecular weights will be stretched to fill the visualization space")
+        
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("Noise Settings")
+    add_mw_noise = st.sidebar.toggle("Add Random Noise to Molecular Weights (±50%)", 
+                                   value=False,
+                                   help="Randomly increase or decrease each protein's molecular weight by up to 50%")
     
     # Visualization settings
     st.subheader("Visualization Settings")
@@ -116,6 +122,11 @@ try:
         properties2, abundance2 = process_organism_data(
             ORGANISMS[organism2], min_mw, max_mw
         )
+        
+        # Apply noise if enabled
+        if add_mw_noise:
+            properties1 = add_mw_noise(properties1)
+            properties2 = add_mw_noise(properties2)
         
         # Apply pI shift if selected
         if augmentation_type == "pI Shift":
@@ -186,6 +197,7 @@ try:
                     'max_molecular_weight': max_mw,
                     'min_normalized_abundance': min_normalized_abundance,
                     'gaussian_std': gaussian_std,
+                    'mw_noise_enabled': add_mw_noise,
                     'pI_shift': pI_shift if augmentation_type == "pI Shift" else 0
                 },
                 'Sample_Ratios': {
