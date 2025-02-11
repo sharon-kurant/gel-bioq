@@ -99,15 +99,15 @@ def filter_by_abundance(properties, abundance, min_abundance):
     """Filter properties by minimum abundance threshold."""
     return [prop for prop in properties if abundance.get(prop[0], 0) >= min_abundance]
 
-def get_pI_range(properties1, properties2):
-    """Calculate the overall pI range using original pI values."""
-    all_pIs = []
-    for props in [properties1, properties2]:
-        if props and len(props[0]) > 3:  # If properties contain both original and shifted pI
-            all_pIs.extend([prop[2] for prop in props])  # Use original pI (index 2)
-        else:
-            all_pIs.extend([prop[2] for prop in props])  # Use the only pI value
-    return min(all_pIs), max(all_pIs)
+# def get_pI_range(properties1, properties2):
+#     """Calculate the overall pI range using original pI values."""
+#     all_pIs = []
+#     for props in [properties1, properties2]:
+#         if props and len(props[0]) > 3:  # If properties contain both original and shifted pI
+#             all_pIs.extend([prop[2] for prop in props])  # Use original pI (index 2)
+#         else:
+#             all_pIs.extend([prop[2] for prop in props])  # Use the only pI value
+#     return min(all_pIs), max(all_pIs)
 
 def calculate_capillary_ranges(min_pI, max_pI, num_capillaries):
     """Calculate the pI ranges for each capillary."""
@@ -115,14 +115,36 @@ def calculate_capillary_ranges(min_pI, max_pI, num_capillaries):
     return [(min_pI + i * capillary_width, min_pI + (i + 1) * capillary_width)
             for i in range(num_capillaries)]
 
+# In data_processing.py
 def filter_by_pI_range(properties, pI_start, pI_end):
     """
     Filter properties by original pI range but keep shifted values for plotting.
     """
-    if properties and len(properties[0]) > 3:  # If properties contain both original and shifted pI
-        return [prop for prop in properties if pI_start <= prop[2] < pI_end]  # Filter by original pI
-    else:
-        return [prop for prop in properties if pI_start <= prop[2] < pI_end]
+    filtered_properties = []
+    for prop in properties:
+        protein_id, mw, pI = prop
+        # Check if pI is a tuple (contains both original and shifted)
+        if isinstance(pI, tuple):
+            original_pI, _ = pI  # Use original pI for filtering
+            if pI_start <= original_pI < pI_end:
+                filtered_properties.append(prop)
+        else:
+            # Regular pI value
+            if pI_start <= pI < pI_end:
+                filtered_properties.append(prop)
+    return filtered_properties
+
+def get_pI_range(properties1, properties2):
+    """Calculate the overall pI range using original pI values."""
+    all_pIs = []
+    for props in [properties1, properties2]:
+        for prop in props:
+            pI = prop[2]
+            if isinstance(pI, tuple):
+                all_pIs.append(pI[0])  # Use original pI
+            else:
+                all_pIs.append(pI)
+    return min(all_pIs), max(all_pIs)
 
 
 def scan_available_organisms():
