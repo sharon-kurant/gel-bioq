@@ -101,22 +101,15 @@ with st.sidebar:
     
     # Capillary settings
     st.sidebar.markdown("---")
-    st.subheader("Capillary Analysis")
-    num_capillaries = st.slider("Number of Capillaries", 1, 100, 8)
-    
-    # Visualization settings
-    st.subheader("Visualization Settings")
-    smoothing_sigma = st.slider("Smoothing Factor", 1, 20, 5)
-    
-    # Line visibility controls
-    st.subheader("Capillary View Settings")
-    
-    # Capillary settings
-    st.subheader("Capillary Analysis")
+    st.subheader("Capillary Analysis")    
     num_capillaries = st.slider("Number of Capillaries", 1, 100, 8)
     show_organism1 = st.checkbox(f"Show {organism1}", value=True)
     show_organism2 = st.checkbox(f"Show {organism2}", value=True)
     show_sum = st.checkbox("Show Sum", value=True)
+    
+    # Visualization settings
+    st.subheader("Visualization Settings")
+    smoothing_sigma = st.slider("Smoothing Factor", 1, 20, 5)
     
     # Download section
     st.sidebar.markdown("---")
