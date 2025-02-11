@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 from scipy.stats import norm
 from scipy.ndimage import gaussian_filter1d
