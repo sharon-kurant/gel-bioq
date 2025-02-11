@@ -54,68 +54,80 @@ with st.sidebar:
     
     # Analysis parameters
     st.subheader("Analysis Parameters")
-    min_mw = st.number_input("Minimum Molecular Weight", value=0.000001, format="%.6f")
-    max_mw = st.number_input("Maximum Molecular Weight", value=500000.0)
-    min_normalized_abundance = st.number_input("Minimum Normalized Abundance", value=2.0)
+    min_mw = st.number_input("Minimum Molecular Weight", value=0.000001, format="%.6f", key="min_mw")
+    max_mw = st.number_input("Maximum Molecular Weight", value=500000.0, key="max_mw")
+    min_normalized_abundance = st.number_input("Minimum Normalized Abundance", value=2.0, key="min_norm_abundance")
     
     # Gaussian parameter
-    gaussian_std = st.slider("Gaussian Standard Deviation", 0.01, 1.0, 0.01, 0.01)
+    gaussian_std = st.slider("Gaussian Standard Deviation", 0.01, 1.0, 0.01, 0.01, key="gaussian_std")
     
     # Sample ratios
     st.subheader("Sample Ratios")
-    ratio1 = st.slider(f"{organism1} Ratio (%)", 0, 100, 95)
-    ratio2 = st.slider(f"{organism2} Ratio (%)", 0, 100, 5)
+    ratio1 = st.slider(f"{organism1} Ratio (%)", 0, 100, 95, key="ratio1")
+    ratio2 = st.slider(f"{organism2} Ratio (%)", 0, 100, 5, key="ratio2")
     
     # Augmentation settings
-    st.sidebar.subheader("Augmentation Settings")
-    augmentation_type = st.sidebar.radio(
+    st.subheader("Augmentation Settings")
+    augmentation_type = st.radio(
         "Select Augmentation Type",
-        options=["None", "pI Shift", "MW Scale"]
+        options=["None", "pI Shift", "MW Scale"],
+        key="augmentation_type"
     )
     
     if augmentation_type == "pI Shift":
-        pI_shift = st.sidebar.slider(
+        pI_shift = st.slider(
             "pI Shift Amount",
             min_value=-1.0,
             max_value=1.0,
             value=0.0,
             step=0.1,
-            help="Shift pI values left (negative) or right (positive)"
+            help="Shift pI values left (negative) or right (positive)",
+            key="pi_shift"
         )
     elif augmentation_type == "MW Scale":
-        mw_scale = st.sidebar.slider(
+        mw_scale = st.slider(
             "MW Scale Factor",
             min_value=0.5,
             max_value=2.0,
             value=1.0,
             step=0.1,
-            help="Scale molecular weights (0.5 = squeeze, 2.0 = stretch)"
+            help="Scale molecular weights (0.5 = squeeze, 2.0 = stretch)",
+            key="mw_scale"
         )
-        
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("Noise Settings")
-    enable_mw_noise  = st.sidebar.checkbox("Add Random Noise to Molecular Weights (±50%)", 
-                                   value=False,
-                                   help="Randomly increase or decrease each protein's molecular weight by up to 50%")
     
+    st.markdown("---")
+    
+    # Noise Settings
+    st.subheader("Noise Settings")
+    enable_mw_noise = st.checkbox(
+        "Add Random Noise to Molecular Weights (±50%)", 
+        value=False,
+        help="Randomly increase or decrease each protein's molecular weight by up to 50%",
+        key="enable_noise"
+    )
+    
+    st.markdown("---")
     
     # Capillary settings
-    st.sidebar.markdown("---")
     st.subheader("Capillary Analysis")    
-    num_capillaries = st.slider("Number of Capillaries", 1, 100, 8)
-    show_organism1 = st.checkbox(f"Show {organism1}", value=True)
-    show_organism2 = st.checkbox(f"Show {organism2}", value=True)
-    show_sum = st.checkbox("Show Sum", value=True)
+    num_capillaries = st.slider("Number of Capillaries", 1, 100, 8, key="num_capillaries")
     
-    # Visualization settings
+    # Visualization toggles
+    st.subheader("Show/Hide Plots")
+    show_organism1 = st.checkbox(f"Show {organism1}", value=True, key="show_org1")
+    show_organism2 = st.checkbox(f"Show {organism2}", value=True, key="show_org2")
+    show_sum = st.checkbox("Show Sum", value=True, key="show_sum")
+    
+    # Smoothing control
     st.subheader("Visualization Settings")
-    smoothing_sigma = st.slider("Smoothing Factor", 1, 20, 5)
+    smoothing_sigma = st.slider("Smoothing Factor", 1, 20, 5, key="smoothing")
+    
+    st.markdown("---")
     
     # Download section
-    st.sidebar.markdown("---")
     st.subheader("Download Results")
-    download_button = st.button("Download All Results")
-
+    download_button = st.button("Download All Results", key="download")
+    
 # Main app logic
 try:
     with st.spinner("Processing data..."):
