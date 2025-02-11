@@ -106,26 +106,18 @@ with st.sidebar:
         key="enable_noise"
     )
     
-    st.markdown("---")
     
     # Capillary settings
+    st.markdown("---")
     st.subheader("Capillary Analysis")    
     num_capillaries = st.slider("Number of Capillaries", 1, 100, 8, key="num_capillaries")
     
     # Add spillage controls
-    enable_spillage = st.sidebar.checkbox("Enable Capillary Spillage", 
-                                        value=False, 
-                                        help="Allow proteins to contribute to adjacent capillaries based on their size")
-    
-    if enable_spillage:
-        spillage_width = st.sidebar.slider(
-            "Spillage Width (pI units)", 
-            min_value=0.01,
-            max_value=0.5,
-            value=0.1,
-            step=0.01,
-            help="Controls how far proteins can spill into adjacent capillaries"
-        )
+    enable_spillage = st.sidebar.checkbox(
+        "Enable Capillary Spillage", 
+        value=False, 
+        help="Allow proteins to contribute to adjacent capillaries based on their circle size"
+    )
     
     # Visualization toggles
     st.subheader("Show/Hide Plots")

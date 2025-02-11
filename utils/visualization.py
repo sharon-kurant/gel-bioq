@@ -93,26 +93,33 @@ def create_capillary_plot(
     cap_start,
     cap_end,
     mw_scale=1.0,
-    enable_spillage=False,
-    spillage_width=0.1
+    enable_spillage=False
 ):
-    """Create capillary plot with spillage handling."""
+    """Create capillary plot with spillage based on protein circle size."""
     fig, ax = plt.subplots(figsize=(6, 4))
     x_values = np.linspace(0, 20, 2000)
     y1 = np.zeros_like(x_values)
     y2 = np.zeros_like(x_values)
     
-    def calculate_spillage_ratio(pI, std_dev, cap_start, cap_end):
+    def calculate_spillage_ratio(pI, abundance, cap_start, cap_end):
         """
-        Calculate what portion of the protein belongs in this capillary.
-        Using error function (erf) to calculate the area under the normal distribution.
+        Calculate spillage based on protein's circle radius (abundance).
         """
-        from scipy.special import erf
+        # Calculate radius in pI units based on abundance
+        radius = np.sqrt(abundance) / 50  # Adjust this factor to control overall spillage amount
         
-        # Calculate the proportion of the protein that falls within this capillary
-        proportion = 0.5 * (erf((cap_end - pI)/(std_dev * np.sqrt(2))) - 
-                          erf((cap_start - pI)/(std_dev * np.sqrt(2))))
-        return max(0, min(1, proportion))  # Ensure value is between 0 and 1
+        # Calculate overlap with capillary
+        if pI + radius < cap_start or pI - radius > cap_end:
+            return 0  # No overlap
+        elif pI - radius >= cap_start and pI + radius <= cap_end:
+            return 1  # Completely inside
+        else:
+            # Partial overlap - calculate the proportion
+            overlap_start = max(cap_start, pI - radius)
+            overlap_end = min(cap_end, pI + radius)
+            overlap_width = overlap_end - overlap_start
+            total_width = 2 * radius
+            return overlap_width / total_width
     
     # Calculate distributions
     for props, abundances, y_values in [
@@ -122,23 +129,20 @@ def create_capillary_plot(
         for prop in props:
             protein_id, mw, pI_tuple = prop
             original_pI, current_pI = pI_tuple if isinstance(pI_tuple, tuple) else (pI_tuple, pI_tuple)
+            abundance = abundances.get(protein_id, 0)
             
-            if enable_spillage:
-                # Calculate spillage contribution
-                spillage_ratio = calculate_spillage_ratio(current_pI, spillage_width, cap_start, cap_end)
-                # Only proceed if there's any contribution to this capillary
-                if spillage_ratio > 0:
-                    abundance = abundances.get(protein_id, 0)
-                    if abundance > 0 and mw > 0:
+            if abundance > 0 and mw > 0:
+                if enable_spillage:
+                    # Calculate spillage based on circle size
+                    spillage_ratio = calculate_spillage_ratio(current_pI, abundance, cap_start, cap_end)
+                    if spillage_ratio > 0:
                         base_std = max(abundance/100, 0.01)
                         scaled_std = base_std * mw_scale if mw_scale != 1.0 else base_std
                         gaussian = norm.pdf(x_values, loc=mw/1000, scale=scaled_std)
                         y_values += gaussian * abundance * spillage_ratio
-            else:
-                # Original behavior without spillage
-                if cap_start <= original_pI < cap_end:
-                    abundance = abundances.get(protein_id, 0)
-                    if abundance > 0 and mw > 0:
+                else:
+                    # Original behavior without spillage
+                    if cap_start <= original_pI < cap_end:
                         base_std = max(abundance/100, 0.01)
                         scaled_std = base_std * mw_scale if mw_scale != 1.0 else base_std
                         gaussian = norm.pdf(x_values, loc=mw/1000, scale=scaled_std)
