@@ -28,36 +28,35 @@ def create_gel_plot(
     
     def plot_organism(properties, abundances, color, label, ratio):
         if properties:
-            # Check if we have a tuple for pI (original, shifted)
-            if properties and isinstance(properties[0][2], tuple):
-                # Use shifted pI for plotting, original pI for data
-                original_pI, shifted_pI = zip(*[prop[2] for prop in properties])
-                mw = [prop[1] for prop in properties]
-                pi_plot = shifted_pI  # Use shifted for plotting
-                pi_data = original_pI  # Use original for data
+            protein_ids = [prop[0] for prop in properties]
+            pIs = [prop[2] for prop in properties]
+            
+            # Handle MW values - check if they're scaled
+            if isinstance(properties[0][1], tuple):
+                original_mw, scaled_mw = zip(*[prop[1] for prop in properties])
+                mw_for_plot = scaled_mw  # Use scaled MW for visualization
+                mw_for_data = original_mw  # Keep original MW for data
             else:
-                # No shift, use regular pI
-                pi_plot = pi_data = [prop[2] for prop in properties]
-                mw = [prop[1] for prop in properties]
-
-            log_mw = [logarithmic_transform(mw_val) for mw_val in mw]
-            sizes = [abundances.get(prop[0], 1) for prop in properties]
+                mw_for_plot = mw_for_data = [prop[1] for prop in properties]
+            
+            log_mw = [logarithmic_transform(mw_val) for mw_val in mw_for_plot]
+            sizes = [abundances.get(protein_id, 1) for protein_id in protein_ids]
             
             # Store data for export
             if label == organism1:
-                plot_data['protein_ids'].extend([prop[0] for prop in properties])
-                plot_data['pI_values'].extend(pi_data)
-                plot_data['mw_values'].extend([mw_val/1000 for mw_val in mw])  # Convert to kDa
+                plot_data['protein_ids'].extend(protein_ids)
+                plot_data['pI_values'].extend(pIs)
+                plot_data['mw_values'].extend([mw/1000 for mw in mw_for_data])  # Convert to kDa
                 plot_data['abundance1'].extend(sizes)
-                plot_data['abundance2'].extend([0] * len(properties))  # Fill with zeros for alignment
+                plot_data['abundance2'].extend([0] * len(properties))
             else:
-                plot_data['protein_ids'].extend([prop[0] for prop in properties])
-                plot_data['pI_values'].extend(pi_data)
-                plot_data['mw_values'].extend([mw_val/1000 for mw_val in mw])  # Convert to kDa
-                plot_data['abundance1'].extend([0] * len(properties))  # Fill with zeros for alignment
+                plot_data['protein_ids'].extend(protein_ids)
+                plot_data['pI_values'].extend(pIs)
+                plot_data['mw_values'].extend([mw/1000 for mw in mw_for_data])
+                plot_data['abundance1'].extend([0] * len(properties))
                 plot_data['abundance2'].extend(sizes)
             
-            plt.scatter(pi_plot, log_mw, alpha=0.5, color=color, s=sizes, 
+            plt.scatter(pIs, log_mw, alpha=0.5, color=color, s=sizes, 
                       label=f'{label} ({ratio}%)')
     
     plot_organism(protein_properties1, normalized_abundance1, 'blue', organism1, ratio1)

@@ -193,22 +193,17 @@ def shift_pI(properties, shift_amount):
     return shifted_properties, shift_amount
 
 
-def stretch_MW(properties):
-    """Stretch molecular weights to fill visualization space."""
-    # Extract all MW values
-    mw_values = [prop[1] for prop in properties]
-    min_mw = min(mw_values)
-    max_mw = max(mw_values)
-    mw_range = max_mw - min_mw
-    
-    # Create new properties with stretched MW
-    stretched_properties = []
-    for prop in properties:
-        protein_id, mw, pI = prop
-        stretched_mw = (mw - min_mw) / mw_range * max_mw if mw_range != 0 else mw
-        stretched_properties.append((protein_id, stretched_mw, pI))
-    
-    return stretched_properties
+def scale_MW(properties, scale_factor):
+    """
+    Scale molecular weights by a factor for visualization.
+    Returns properties with both original and scaled MW values.
+    """
+    scaled_properties = []
+    for protein_id, mw, pI in properties:
+        scaled_mw = mw * scale_factor
+        # Store both original and scaled MW: (original_mw, scaled_mw)
+        scaled_properties.append((protein_id, (mw, scaled_mw), pI))
+    return scaled_properties
 
 def shift_pI(properties, shift_amount):
     """

@@ -66,19 +66,15 @@ with st.sidebar:
     ratio1 = st.slider(f"{organism1} Ratio (%)", 0, 100, 95)
     ratio2 = st.slider(f"{organism2} Ratio (%)", 0, 100, 5)
     
-    # Capillary settings
-    st.subheader("Capillary Analysis")
-    num_capillaries = st.slider("Number of Capillaries", 1, 100, 8)
-    
     # Augmentation settings
-    st.subheader("Augmentation Settings")
-    augmentation_type = st.radio(
+    st.sidebar.subheader("Augmentation Settings")
+    augmentation_type = st.sidebar.radio(
         "Select Augmentation Type",
-        options=["None", "pI Shift", "MW Stretching"]
+        options=["None", "pI Shift", "MW Scale"]
     )
     
     if augmentation_type == "pI Shift":
-        pI_shift = st.slider(
+        pI_shift = st.sidebar.slider(
             "pI Shift Amount",
             min_value=-1.0,
             max_value=1.0,
@@ -86,10 +82,15 @@ with st.sidebar:
             step=0.1,
             help="Shift pI values left (negative) or right (positive)"
         )
-        if abs(pI_shift) > 0:
-            st.info("Points will be shifted while ensuring all remain visible in the plot")
-    elif augmentation_type == "MW Stretching":
-        st.info("Molecular weights will be stretched to fill the visualization space")
+    elif augmentation_type == "MW Scale":
+        mw_scale = st.sidebar.slider(
+            "MW Scale Factor",
+            min_value=0.5,
+            max_value=2.0,
+            value=1.0,
+            step=0.1,
+            help="Scale molecular weights (0.5 = squeeze, 2.0 = stretch)"
+        )
         
     st.sidebar.markdown("---")
     st.sidebar.subheader("Noise Settings")
@@ -97,18 +98,28 @@ with st.sidebar:
                                    value=False,
                                    help="Randomly increase or decrease each protein's molecular weight by up to 50%")
     
+    
+    # Capillary settings
+    st.sidebar.markdown("---")
+    st.subheader("Capillary Analysis")
+    num_capillaries = st.slider("Number of Capillaries", 1, 100, 8)
+    
     # Visualization settings
     st.subheader("Visualization Settings")
     smoothing_sigma = st.slider("Smoothing Factor", 1, 20, 5)
     
     # Line visibility controls
     st.subheader("Capillary View Settings")
+    
+    # Capillary settings
+    st.subheader("Capillary Analysis")
+    num_capillaries = st.slider("Number of Capillaries", 1, 100, 8)
     show_organism1 = st.checkbox(f"Show {organism1}", value=True)
     show_organism2 = st.checkbox(f"Show {organism2}", value=True)
     show_sum = st.checkbox("Show Sum", value=True)
     
     # Download section
-    st.markdown("---")
+    st.sidebar.markdown("---")
     st.subheader("Download Results")
     download_button = st.button("Download All Results")
 
