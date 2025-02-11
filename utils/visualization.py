@@ -92,13 +92,27 @@ def create_capillary_plot(
     show_sum,
     cap_start,
     cap_end,
-    mw_scale=1.0
+    mw_scale=1.0,
+    enable_spillage=False,
+    spillage_width=0.1
 ):
-    """Create capillary plot."""
+    """Create capillary plot with spillage handling."""
     fig, ax = plt.subplots(figsize=(6, 4))
     x_values = np.linspace(0, 20, 2000)
     y1 = np.zeros_like(x_values)
     y2 = np.zeros_like(x_values)
+    
+    def calculate_spillage_ratio(pI, std_dev, cap_start, cap_end):
+        """
+        Calculate what portion of the protein belongs in this capillary.
+        Using error function (erf) to calculate the area under the normal distribution.
+        """
+        from scipy.special import erf
+        
+        # Calculate the proportion of the protein that falls within this capillary
+        proportion = 0.5 * (erf((cap_end - pI)/(std_dev * np.sqrt(2))) - 
+                          erf((cap_start - pI)/(std_dev * np.sqrt(2))))
+        return max(0, min(1, proportion))  # Ensure value is between 0 and 1
     
     # Calculate distributions
     for props, abundances, y_values in [
@@ -109,18 +123,26 @@ def create_capillary_plot(
             protein_id, mw, pI_tuple = prop
             original_pI, current_pI = pI_tuple if isinstance(pI_tuple, tuple) else (pI_tuple, pI_tuple)
             
-            # If the protein originally belonged to this capillary
-            if cap_start <= original_pI < cap_end:
-                abundance = abundances.get(protein_id, 0)
-                if abundance > 0 and mw > 0:
-                    # Base std dev normalized by abundance
-                    base_std = max(abundance/100, 0.01)
-                    # Scale the standard deviation based on mw_scale
-                    scaled_std = base_std * mw_scale if mw_scale != 1.0 else base_std
-                    
-                    gaussian = norm.pdf(x_values, loc=mw/1000, 
-                                     scale=scaled_std)
-                    y_values += gaussian * abundance
+            if enable_spillage:
+                # Calculate spillage contribution
+                spillage_ratio = calculate_spillage_ratio(current_pI, spillage_width, cap_start, cap_end)
+                # Only proceed if there's any contribution to this capillary
+                if spillage_ratio > 0:
+                    abundance = abundances.get(protein_id, 0)
+                    if abundance > 0 and mw > 0:
+                        base_std = max(abundance/100, 0.01)
+                        scaled_std = base_std * mw_scale if mw_scale != 1.0 else base_std
+                        gaussian = norm.pdf(x_values, loc=mw/1000, scale=scaled_std)
+                        y_values += gaussian * abundance * spillage_ratio
+            else:
+                # Original behavior without spillage
+                if cap_start <= original_pI < cap_end:
+                    abundance = abundances.get(protein_id, 0)
+                    if abundance > 0 and mw > 0:
+                        base_std = max(abundance/100, 0.01)
+                        scaled_std = base_std * mw_scale if mw_scale != 1.0 else base_std
+                        gaussian = norm.pdf(x_values, loc=mw/1000, scale=scaled_std)
+                        y_values += gaussian * abundance
     
     # Apply smoothing - adjust based on MW scale
     adjusted_sigma = smoothing_sigma * mw_scale

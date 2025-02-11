@@ -112,11 +112,26 @@ with st.sidebar:
     st.subheader("Capillary Analysis")    
     num_capillaries = st.slider("Number of Capillaries", 1, 100, 8, key="num_capillaries")
     
+    # Add spillage controls
+    enable_spillage = st.sidebar.checkbox("Enable Capillary Spillage", 
+                                        value=False, 
+                                        help="Allow proteins to contribute to adjacent capillaries based on their size")
+    
+    if enable_spillage:
+        spillage_width = st.sidebar.slider(
+            "Spillage Width (pI units)", 
+            min_value=0.01,
+            max_value=0.5,
+            value=0.1,
+            step=0.01,
+            help="Controls how far proteins can spill into adjacent capillaries"
+        )
+    
     # Visualization toggles
     st.subheader("Show/Hide Plots")
-    show_organism1 = st.checkbox(f"Show {organism1}", value=True, key="show_org1")
-    show_organism2 = st.checkbox(f"Show {organism2}", value=True, key="show_org2")
-    show_sum = st.checkbox("Show Sum", value=True, key="show_sum")
+    show_organism1 = st.sidebar.checkbox(f"Show {organism1}", value=True, key="show_org1")
+    show_organism2 = st.sidebar.checkbox(f"Show {organism2}", value=True, key="show_org2")
+    show_sum = st.sidebar.checkbox("Show Sum", value=True, key="show_sum")
     
     # Smoothing control
     st.subheader("Visualization Settings")
@@ -204,7 +219,9 @@ try:
                         gaussian_std,
                         show_organism1, show_organism2, show_sum,
                         cap_start, cap_end,
-                        mw_scale=mw_scale if augmentation_type == "MW Scale" else 1.0
+                        mw_scale=mw_scale if augmentation_type == "MW Scale" else 1.0,
+                        enable_spillage=enable_spillage,
+                        spillage_width=spillage_width if enable_spillage else 0.0
                     )
                     
                     capillary_figs.append(fig)
