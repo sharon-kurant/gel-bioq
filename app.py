@@ -212,8 +212,7 @@ try:
                         show_organism1, show_organism2, show_sum,
                         cap_start, cap_end,
                         mw_scale=mw_scale if augmentation_type == "MW Scale" else 1.0,
-                        enable_spillage=enable_spillage,
-                        spillage_width=spillage_width if enable_spillage else 0.0
+                        enable_spillage=enable_spillage  # Remove spillage_width parameter
                     )
                     
                     capillary_figs.append(fig)
