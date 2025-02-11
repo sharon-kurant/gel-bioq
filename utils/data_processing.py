@@ -189,16 +189,14 @@ def stretch_MW(properties):
     
     return stretched_properties
 
-def add_mw_noise(properties):
+def shift_pI(properties, shift_amount):
     """
-    Add random noise to molecular weights (-50% to +50%).
-    Returns new properties list with noisy MW values.
+    Shift pI values by a specified amount (-1 to +1).
+    Returns properties with both original and shifted pI values.
     """
-    noisy_properties = []
-    for prop in properties:
-        protein_id, mw, pi = prop
-        # Generate random factor between 0.5 and 1.5 (±50%)
-        noise_factor = np.random.uniform(0.5, 1.5)
-        noisy_mw = mw * noise_factor
-        noisy_properties.append((protein_id, noisy_mw, pi))
-    return noisy_properties
+    shifted_properties = []
+    for protein_id, mw, original_pI in properties:
+        shifted_pI = original_pI + shift_amount
+        # Keep the same 3-value tuple structure but store both pIs in the third position
+        shifted_properties.append((protein_id, mw, (original_pI, shifted_pI)))
+    return shifted_properties, shift_amount

@@ -28,14 +28,15 @@ def create_gel_plot(
     
     def plot_organism(properties, abundances, color, label, ratio):
         if properties:
-            # Check if we have shifted pI values (tuple of length 4)
-            if properties and len(properties[0]) > 3:
-                # Use shifted pI (index 3) for plotting, but keep original pI (index 2) for data
-                pi_plot = [prop[3] for prop in properties]  # shifted pI for plotting
-                pi_data = [prop[2] for prop in properties]  # original pI for data
+            # Check if we have a tuple for pI (original, shifted)
+            if properties and isinstance(properties[0][2], tuple):
+                # Use shifted pI for plotting, original pI for data
+                original_pI, shifted_pI = zip(*[prop[2] for prop in properties])
                 mw = [prop[1] for prop in properties]
+                pi_plot = shifted_pI  # Use shifted for plotting
+                pi_data = original_pI  # Use original for data
             else:
-                # No shift, use regular pI (index 2)
+                # No shift, use regular pI
                 pi_plot = pi_data = [prop[2] for prop in properties]
                 mw = [prop[1] for prop in properties]
 
@@ -45,13 +46,13 @@ def create_gel_plot(
             # Store data for export
             if label == organism1:
                 plot_data['protein_ids'].extend([prop[0] for prop in properties])
-                plot_data['pI_values'].extend(pi_data)  # Store original pI
+                plot_data['pI_values'].extend(pi_data)
                 plot_data['mw_values'].extend([mw_val/1000 for mw_val in mw])  # Convert to kDa
                 plot_data['abundance1'].extend(sizes)
                 plot_data['abundance2'].extend([0] * len(properties))  # Fill with zeros for alignment
             else:
                 plot_data['protein_ids'].extend([prop[0] for prop in properties])
-                plot_data['pI_values'].extend(pi_data)  # Store original pI
+                plot_data['pI_values'].extend(pi_data)
                 plot_data['mw_values'].extend([mw_val/1000 for mw_val in mw])  # Convert to kDa
                 plot_data['abundance1'].extend([0] * len(properties))  # Fill with zeros for alignment
                 plot_data['abundance2'].extend(sizes)
