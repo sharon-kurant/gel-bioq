@@ -99,16 +99,6 @@ def filter_by_abundance(properties, abundance, min_abundance):
     """Filter properties by minimum abundance threshold."""
     return [prop for prop in properties if abundance.get(prop[0], 0) >= min_abundance]
 
-# def get_pI_range(properties1, properties2):
-#     """Calculate the overall pI range using original pI values."""
-#     all_pIs = []
-#     for props in [properties1, properties2]:
-#         if props and len(props[0]) > 3:  # If properties contain both original and shifted pI
-#             all_pIs.extend([prop[2] for prop in props])  # Use original pI (index 2)
-#         else:
-#             all_pIs.extend([prop[2] for prop in props])  # Use the only pI value
-#     return min(all_pIs), max(all_pIs)
-
 def calculate_capillary_ranges(min_pI, max_pI, num_capillaries):
     """Calculate the pI ranges for each capillary."""
     capillary_width = (max_pI - min_pI) / num_capillaries
@@ -182,14 +172,13 @@ def scan_available_organisms():
 def shift_pI(properties, shift_amount):
     """
     Shift pI values by a specified amount (-1 to +1).
-    Returns properties with both original and shifted pI values.
     """
     shifted_properties = []
     for prop in properties:
-        protein_id, mw, original_pI = prop
-        shifted_pI = original_pI + shift_amount
-        # Store both original and shifted pI values
-        shifted_properties.append((protein_id, mw, original_pI, shifted_pI))
+        protein_id, mw, pI = prop
+        shifted_pI = pI + shift_amount
+        # Keep original structure, just update pI value
+        shifted_properties.append((protein_id, mw, shifted_pI))
     return shifted_properties, shift_amount
 
 
@@ -205,14 +194,14 @@ def scale_MW(properties, scale_factor):
         scaled_properties.append((protein_id, (mw, scaled_mw), pI))
     return scaled_properties
 
-def shift_pI(properties, shift_amount):
-    """
-    Shift pI values by a specified amount (-1 to +1).
-    Returns properties with both original and shifted pI values.
-    """
-    shifted_properties = []
-    for protein_id, mw, original_pI in properties:
-        shifted_pI = original_pI + shift_amount
-        # Keep the same 3-value tuple structure but store both pIs in the third position
-        shifted_properties.append((protein_id, mw, (original_pI, shifted_pI)))
-    return shifted_properties, shift_amount
+# def shift_pI(properties, shift_amount):
+#     """
+#     Shift pI values by a specified amount (-1 to +1).
+#     Returns properties with both original and shifted pI values.
+#     """
+#     shifted_properties = []
+#     for protein_id, mw, original_pI in properties:
+#         shifted_pI = original_pI + shift_amount
+#         # Keep the same 3-value tuple structure but store both pIs in the third position
+#         shifted_properties.append((protein_id, mw, (original_pI, shifted_pI)))
+#     return shifted_properties, shift_amount

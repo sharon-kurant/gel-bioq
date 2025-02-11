@@ -170,7 +170,8 @@ try:
                 normalized_abundance1, normalized_abundance2,
                 organism1, organism2,
                 ratio1, ratio2,
-                augmentation_type
+                augmentation_type,
+                mw_scale=mw_scale if augmentation_type == "MW Scale" else 1.0
             )
             st.pyplot(gel_fig)
         

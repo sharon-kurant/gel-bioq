@@ -12,9 +12,10 @@ def create_gel_plot(
     organism2,
     ratio1,
     ratio2,
-    augmentation_type=None
+    augmentation_type=None,
+    mw_scale=1.0  # Add scale factor parameter
 ):
-    """Create 2D gel plot."""
+    """Create 2D gel plot with optional axis scaling."""
     fig, ax = plt.subplots(figsize=(12, 8))
     
     # Store data for export
@@ -28,36 +29,36 @@ def create_gel_plot(
     
     def plot_organism(properties, abundances, color, label, ratio):
         if properties:
-            protein_ids = [prop[0] for prop in properties]
-            pIs = [prop[2] for prop in properties]
+            pi = [prop[2] for prop in properties]
+            mw = [prop[1] for prop in properties]
+            log_mw = [logarithmic_transform(mw_val) for mw_val in mw]
+            sizes = [abundances.get(prop[0], 1) for prop in properties]
             
-            # Handle MW values - check if they're scaled
-            if isinstance(properties[0][1], tuple):
-                original_mw, scaled_mw = zip(*[prop[1] for prop in properties])
-                mw_for_plot = scaled_mw  # Use scaled MW for visualization
-                mw_for_data = original_mw  # Keep original MW for data
+            # Scale marker shapes based on MW scale
+            if mw_scale != 1.0:
+                marker_scale = dict(
+                    marker='o',
+                    transform=matplotlib.transforms.Affine2D().scale(1, mw_scale)
+                )
             else:
-                mw_for_plot = mw_for_data = [prop[1] for prop in properties]
-            
-            log_mw = [logarithmic_transform(mw_val) for mw_val in mw_for_plot]
-            sizes = [abundances.get(protein_id, 1) for protein_id in protein_ids]
+                marker_scale = dict(marker='o')
             
             # Store data for export
             if label == organism1:
-                plot_data['protein_ids'].extend(protein_ids)
-                plot_data['pI_values'].extend(pIs)
-                plot_data['mw_values'].extend([mw/1000 for mw in mw_for_data])  # Convert to kDa
+                plot_data['protein_ids'].extend([prop[0] for prop in properties])
+                plot_data['pI_values'].extend(pi)
+                plot_data['mw_values'].extend([mw_val/1000 for mw_val in mw])
                 plot_data['abundance1'].extend(sizes)
                 plot_data['abundance2'].extend([0] * len(properties))
             else:
-                plot_data['protein_ids'].extend(protein_ids)
-                plot_data['pI_values'].extend(pIs)
-                plot_data['mw_values'].extend([mw/1000 for mw in mw_for_data])
+                plot_data['protein_ids'].extend([prop[0] for prop in properties])
+                plot_data['pI_values'].extend(pi)
+                plot_data['mw_values'].extend([mw_val/1000 for mw_val in mw])
                 plot_data['abundance1'].extend([0] * len(properties))
                 plot_data['abundance2'].extend(sizes)
             
-            plt.scatter(pIs, log_mw, alpha=0.5, color=color, s=sizes, 
-                      label=f'{label} ({ratio}%)')
+            plt.scatter(pi, log_mw, alpha=0.5, color=color, s=sizes, 
+                      label=f'{label} ({ratio}%)', **marker_scale)
     
     plot_organism(protein_properties1, normalized_abundance1, 'blue', organism1, ratio1)
     plot_organism(protein_properties2, normalized_abundance2, 'red', organism2, ratio2)
@@ -68,10 +69,18 @@ def create_gel_plot(
     plt.legend()
     plt.grid(True, linestyle='--', linewidth=0.5)
     
-    # Set y-axis labels
+    # Set y-axis labels and scale
     yticks = plt.gca().get_yticks()
     ytick_labels = [f'{int(np.exp((tick + 6.4014) / 5.3779) / 1000):.0f}' for tick in yticks]
     plt.gca().set_yticklabels(ytick_labels)
+    
+    # Apply MW scaling to the axis
+    if mw_scale != 1.0:
+        current_ylim = plt.gca().get_ylim()
+        mean_y = sum(current_ylim) / 2
+        half_range = (current_ylim[1] - current_ylim[0]) / 2
+        plt.gca().set_ylim(mean_y - half_range * mw_scale, 
+                          mean_y + half_range * mw_scale)
     
     return fig, plot_data
 
