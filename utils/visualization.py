@@ -14,9 +14,9 @@ def create_gel_plot(
     ratio1,
     ratio2,
     augmentation_type=None,
-    mw_scale=1.0  # Add scale factor parameter
+    mw_scale=1.0
 ):
-    """Create 2D gel plot with optional axis scaling."""
+    """Create 2D gel plot."""
     fig, ax = plt.subplots(figsize=(12, 8))
     
     # Store data for export
@@ -35,14 +35,15 @@ def create_gel_plot(
             log_mw = [logarithmic_transform(mw_val) for mw_val in mw]
             sizes = [abundances.get(prop[0], 1) for prop in properties]
             
-            # Scale marker shapes based on MW scale
+            # Create marker that will be scaled into an ellipse
             if mw_scale != 1.0:
-                marker_scale = dict(
+                # Create elliptical markers by scaling circle in y direction
+                marker = matplotlib.markers.MarkerStyle(
                     marker='o',
                     transform=matplotlib.transforms.Affine2D().scale(1, mw_scale)
                 )
             else:
-                marker_scale = dict(marker='o')
+                marker = 'o'
             
             # Store data for export
             if label == organism1:
@@ -59,7 +60,7 @@ def create_gel_plot(
                 plot_data['abundance2'].extend(sizes)
             
             plt.scatter(pi, log_mw, alpha=0.5, color=color, s=sizes, 
-                      label=f'{label} ({ratio}%)', **marker_scale)
+                      marker=marker, label=f'{label} ({ratio}%)')
     
     plot_organism(protein_properties1, normalized_abundance1, 'blue', organism1, ratio1)
     plot_organism(protein_properties2, normalized_abundance2, 'red', organism2, ratio2)
@@ -70,18 +71,10 @@ def create_gel_plot(
     plt.legend()
     plt.grid(True, linestyle='--', linewidth=0.5)
     
-    # Set y-axis labels and scale
+    # Set y-axis labels
     yticks = plt.gca().get_yticks()
     ytick_labels = [f'{int(np.exp((tick + 6.4014) / 5.3779) / 1000):.0f}' for tick in yticks]
     plt.gca().set_yticklabels(ytick_labels)
-    
-    # Apply MW scaling to the axis
-    if mw_scale != 1.0:
-        current_ylim = plt.gca().get_ylim()
-        mean_y = sum(current_ylim) / 2
-        half_range = (current_ylim[1] - current_ylim[0]) / 2
-        plt.gca().set_ylim(mean_y - half_range * mw_scale, 
-                          mean_y + half_range * mw_scale)
     
     return fig, plot_data
 
