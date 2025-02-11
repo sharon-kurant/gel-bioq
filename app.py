@@ -93,7 +93,7 @@ with st.sidebar:
         
     st.sidebar.markdown("---")
     st.sidebar.subheader("Noise Settings")
-    add_mw_noise = st.sidebar.toggle("Add Random Noise to Molecular Weights (±50%)", 
+    add_mw_noise = st.sidebar.checkbox("Add Random Noise to Molecular Weights (±50%)", 
                                    value=False,
                                    help="Randomly increase or decrease each protein's molecular weight by up to 50%")
     
