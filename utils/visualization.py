@@ -106,16 +106,21 @@ def create_capillary_plot(
         (filtered_props2, normalized_abundance2, y2)
     ]:
         for prop in props:
-            protein_id, mw, pI = prop
-            abundance = abundances.get(protein_id, 0)
-            if abundance > 0 and mw > 0:
-                base_std = gaussian_std  # Use the provided gaussian_std
-                # Scale the standard deviation based on mw_scale
-                scaled_std = base_std * mw_scale if mw_scale != 1.0 else base_std
-                
-                gaussian = norm.pdf(x_values, loc=mw/1000, 
-                                 scale=scaled_std)
-                y_values += gaussian * abundance
+            protein_id, mw, pI_tuple = prop
+            original_pI, current_pI = pI_tuple if isinstance(pI_tuple, tuple) else (pI_tuple, pI_tuple)
+            
+            # If the protein originally belonged to this capillary
+            if cap_start <= original_pI < cap_end:
+                abundance = abundances.get(protein_id, 0)
+                if abundance > 0 and mw > 0:
+                    # Base std dev normalized by abundance
+                    base_std = max(abundance/100, 0.01)
+                    # Scale the standard deviation based on mw_scale
+                    scaled_std = base_std * mw_scale if mw_scale != 1.0 else base_std
+                    
+                    gaussian = norm.pdf(x_values, loc=mw/1000, 
+                                     scale=scaled_std)
+                    y_values += gaussian * abundance
     
     # Apply smoothing - adjust based on MW scale
     adjusted_sigma = smoothing_sigma * mw_scale
