@@ -115,23 +115,22 @@ def calculate_capillary_ranges(min_pI, max_pI, num_capillaries):
     return [(min_pI + i * capillary_width, min_pI + (i + 1) * capillary_width)
             for i in range(num_capillaries)]
 
-# In data_processing.py
-def filter_by_pI_range(properties, pI_start, pI_end):
+def filter_by_pI_range(properties, pI_start, pI_end, use_shifted=True):
     """
-    Filter properties by original pI range but keep shifted values for plotting.
+    Filter properties by pI range.
+    If use_shifted is True, use the shifted pI values for filtering.
     """
     filtered_properties = []
     for prop in properties:
         protein_id, mw, pI = prop
-        # Check if pI is a tuple (contains both original and shifted)
         if isinstance(pI, tuple):
-            original_pI, _ = pI  # Use original pI for filtering
-            if pI_start <= original_pI < pI_end:
-                filtered_properties.append(prop)
+            original_pI, shifted_pI = pI
+            check_pI = shifted_pI if use_shifted else original_pI
         else:
-            # Regular pI value
-            if pI_start <= pI < pI_end:
-                filtered_properties.append(prop)
+            check_pI = pI
+            
+        if pI_start <= check_pI < pI_end:
+            filtered_properties.append(prop)
     return filtered_properties
 
 def get_pI_range(properties1, properties2):

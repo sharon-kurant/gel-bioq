@@ -159,42 +159,41 @@ try:
             st.pyplot(gel_fig)
         
         with tab2:
-            with tab2:
-                st.subheader("Capillary Analysis")
-                capillary_figs = []
-                capillary_data = []
-                x_values = None
-                
-                # Calculate capillary ranges
-                min_pI, max_pI = get_pI_range(properties1, properties2)
-                capillary_ranges = calculate_capillary_ranges(min_pI, max_pI, num_capillaries)
-                
-                # Create capillary plots
-                cols = st.columns(2)
-                for i, (cap_start, cap_end) in enumerate(capillary_ranges):
-                    with cols[i % 2]:
-                        st.write(f"Capillary {i + 1}: pI {cap_start:.2f} - {cap_end:.2f}")
-                        
-                        # Filter proteins for this capillary
-                        filtered_props1 = filter_by_pI_range(properties1, cap_start, cap_end)
-                        filtered_props2 = filter_by_pI_range(properties2, cap_start, cap_end)
-                        
-                        fig, data, x_vals = create_capillary_plot(
-                            filtered_props1, filtered_props2,
-                            normalized_abundance1, normalized_abundance2,
-                            organism1, organism2,
-                            smoothing_sigma,
-                            gaussian_std,
-                            show_organism1, show_organism2, show_sum,
-                            cap_start, cap_end  # Add these parameters
-                        )
-                        
-                        capillary_figs.append(fig)
-                        capillary_data.append(data)
-                        if x_values is None:
-                            x_values = x_vals
-                        
-                        st.pyplot(fig)
+            st.subheader("Capillary Analysis")
+            capillary_figs = []
+            capillary_data = []
+            x_values = None
+            
+            # Calculate capillary ranges
+            min_pI, max_pI = get_pI_range(properties1, properties2)
+            capillary_ranges = calculate_capillary_ranges(min_pI, max_pI, num_capillaries)
+            
+            # Create capillary plots
+            cols = st.columns(2)
+            for i, (cap_start, cap_end) in enumerate(capillary_ranges):
+                with cols[i % 2]:
+                    st.write(f"Capillary {i + 1}: pI {cap_start:.2f} - {cap_end:.2f}")
+                    
+                    # Filter proteins for this capillary
+                    filtered_props1 = filter_by_pI_range(properties1, cap_start, cap_end)
+                    filtered_props2 = filter_by_pI_range(properties2, cap_start, cap_end)
+                    
+                    fig, data, x_vals = create_capillary_plot(
+                        filtered_props1, filtered_props2,
+                        normalized_abundance1, normalized_abundance2,
+                        organism1, organism2,
+                        smoothing_sigma,
+                        gaussian_std,
+                        show_organism1, show_organism2, show_sum,
+                        cap_start, cap_end  
+                    )
+                    
+                    capillary_figs.append(fig)
+                    capillary_data.append(data)
+                    if x_values is None:
+                        x_values = x_vals
+                    
+                    st.pyplot(fig)
                     
         # Handle download if requested
         if download_button:
