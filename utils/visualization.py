@@ -87,7 +87,9 @@ def create_capillary_plot(
     gaussian_std,
     show_organism1,
     show_organism2,
-    show_sum
+    show_sum,
+    cap_start,
+    cap_end
 ):
     """Create capillary plot."""
     fig, ax = plt.subplots(figsize=(6, 4))
@@ -101,12 +103,25 @@ def create_capillary_plot(
         (filtered_props2, normalized_abundance2, y2)
     ]:
         for prop in props:
-            protein_id, mw, pi = prop
-            abundance = abundances.get(protein_id, 0)
-            if abundance > 0 and mw > 0:
-                gaussian = norm.pdf(x_values, loc=mw/1000, 
-                                 scale=max(abundance/100, 0.01))  # Revert to original scale calculation
-                y_values += gaussian * abundance
+            protein_id, mw, pI = prop
+            # Check if pI is shifted (tuple)
+            if isinstance(pI, tuple):
+                original_pI, shifted_pI = pI
+                # Only include protein if its original pI is in the capillary range
+                if cap_start <= original_pI < cap_end:
+                    abundance = abundances.get(protein_id, 0)
+                    if abundance > 0 and mw > 0:
+                        gaussian = norm.pdf(x_values, loc=mw/1000, 
+                                         scale=max(abundance/100, 0.01))
+                        y_values += gaussian * abundance
+            else:
+                # Handle non-shifted case
+                if cap_start <= pI < cap_end:
+                    abundance = abundances.get(protein_id, 0)
+                    if abundance > 0 and mw > 0:
+                        gaussian = norm.pdf(x_values, loc=mw/1000, 
+                                         scale=max(abundance/100, 0.01))
+                        y_values += gaussian * abundance
     
     # Apply smoothing
     y1_smooth = gaussian_filter1d(y1, sigma=smoothing_sigma)
@@ -124,6 +139,7 @@ def create_capillary_plot(
         plt.plot(x_values, y_sum, color='green', 
                 label='Sum', linewidth=2, alpha=0.7)
     
+    plt.title(f'Capillary: pI range ({cap_start:.2f} - {cap_end:.2f})')
     plt.xlabel('Molecular Weight (kDa)')
     plt.ylabel('Volume')
     if show_organism1 or show_organism2 or show_sum:
