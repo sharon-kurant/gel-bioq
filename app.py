@@ -224,29 +224,43 @@ try:
                     
         # Handle download if requested
         if download_button:
+            # Update the parameters dictionary in the download section
             parameters = {
                 'Analysis_Parameters': {
                     'min_molecular_weight': min_mw,
                     'max_molecular_weight': max_mw,
                     'min_normalized_abundance': min_normalized_abundance,
-                    'gaussian_std': gaussian_std,
-                    'mw_noise_enabled': enable_mw_noise,
-                    'pI_shift': pI_shift if augmentation_type == "pI Shift" else 0
+                    'gaussian_std': gaussian_std
                 },
                 'Sample_Ratios': {
                     organism1: ratio1,
                     organism2: ratio2
                 },
-                'Capillaries': {
-                    f'capillary_{i+1}': {
-                        'pI_range': {
-                            'start': ranges[0],
-                            'end': ranges[1]
-                        }
-                    } for i, ranges in enumerate(capillary_ranges)
+                'Augmentations': {
+                    'type': augmentation_type,
+                    'pI_shift': pI_shift if augmentation_type == "pI Shift" else 0,
+                    'mw_scale': mw_scale if augmentation_type == "MW Scale" else 1.0,
+                    'mw_noise_enabled': enable_mw_noise
+                },
+                'Capillary_Settings': {
+                    'number_of_capillaries': num_capillaries,
+                    'spillage_enabled': enable_spillage,
+                    'ranges': [
+                        {
+                            f'capillary_{i+1}': {
+                                'pI_range': {
+                                    'start': ranges[0],
+                                    'end': ranges[1]
+                                }
+                            }
+                        } for i, ranges in enumerate(capillary_ranges)
+                    ]
                 },
                 'Visualization_Settings': {
-                    'smoothing_factor': smoothing_sigma
+                    'smoothing_factor': smoothing_sigma,
+                    'show_organism1': show_organism1,
+                    'show_organism2': show_organism2,
+                    'show_sum': show_sum
                 }
             }
             
@@ -284,20 +298,42 @@ except Exception as e:
     │       └── fasta.v11.5.511145.fa
     """)
 
-# Add instructions at the bottom
+# Instructions at the bottom
 st.markdown("""
 ---
 ### How to Use
 1. Select organisms from the dropdown menus in the sidebar
-2. Adjust the analysis parameters as needed:
-   - Molecular weight range
-   - Sample ratios
-   - Abundance threshold
-   - Number of capillaries
-   - Smoothing factor for capillary views
-3. View the results in the tabs above:
-   - 2D Gel Plot tab shows the main visualization
-   - Capillary Analysis tab shows individual capillary distributions
-4. Toggle visibility of different lines in capillary views
-5. Download all results using the download button
+
+2. Adjust Analysis Parameters:
+   * Set molecular weight range (kDa)
+   * Adjust minimum normalized abundance
+   * Configure Gaussian standard deviation for peak shapes
+
+3. Set Sample Ratios:
+   * Adjust relative proportions of each organism (0-100%)
+
+4. Choose Augmentations (optional):
+   * pI Shift: Shift proteins left/right on pI axis (-1 to +1 units)
+   * MW Scale: Stretch/squeeze protein spots vertically (0.5x to 2x)
+   * MW Noise: Add random variation to molecular weights (±50%)
+
+5. Configure Capillary Analysis:
+   * Set number of capillaries (1-100)
+   * Enable/disable capillary spillage
+   * Toggle visibility of individual organisms and sum
+   * Adjust smoothing factor for line plots
+
+6. View Visualizations:
+   * 2D Gel Plot tab: Shows complete protein distribution
+   * Capillary Analysis tab: Shows protein distribution in pI ranges
+   * Use toggles to show/hide individual organisms and sum
+
+7. Export Results:
+   * Click "Download Results" to get:
+     - All visualization parameters
+     - 2D gel plot image and data
+     - Capillary analysis plots and data
+     - Complete parameter settings
+
+Note: Augmentations and settings can be combined to explore different aspects of the protein distribution patterns.
 """)
