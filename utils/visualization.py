@@ -109,15 +109,12 @@ def create_capillary_plot(
             protein_id, mw, pI = prop
             abundance = abundances.get(protein_id, 0)
             if abundance > 0 and mw > 0:
-                # Calculate effective standard deviation for this protein
-                effective_std = max(abundance/100, 0.01)
-                if mw_scale != 1.0:
-                    # When stretched (mw_scale > 1), increase spread
-                    # When squeezed (mw_scale < 1), decrease spread
-                    effective_std = effective_std * mw_scale
+                base_std = gaussian_std  # Use the provided gaussian_std
+                # Scale the standard deviation based on mw_scale
+                scaled_std = base_std * mw_scale if mw_scale != 1.0 else base_std
                 
                 gaussian = norm.pdf(x_values, loc=mw/1000, 
-                                 scale=effective_std)
+                                 scale=scaled_std)
                 y_values += gaussian * abundance
     
     # Apply smoothing - adjust based on MW scale
