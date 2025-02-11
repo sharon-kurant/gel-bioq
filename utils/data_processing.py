@@ -105,22 +105,26 @@ def calculate_capillary_ranges(min_pI, max_pI, num_capillaries):
     return [(min_pI + i * capillary_width, min_pI + (i + 1) * capillary_width)
             for i in range(num_capillaries)]
 
-def filter_by_pI_range(properties, pI_start, pI_end, use_shifted=True):
+def filter_by_pI_range(properties, pI_start, pI_end):
     """
-    Filter properties by pI range.
-    If use_shifted is True, use the shifted pI values for filtering.
+    Return all proteins, marking if they're in this capillary range based on original pI.
+    Each returned protein will include a flag indicating if it belongs to this capillary.
     """
     filtered_properties = []
     for prop in properties:
         protein_id, mw, pI = prop
+        original_pI = pI
+        current_pI = pI
+        
+        # Check if this is a shifted value
         if isinstance(pI, tuple):
-            original_pI, shifted_pI = pI
-            check_pI = shifted_pI if use_shifted else original_pI
-        else:
-            check_pI = pI
+            original_pI, current_pI = pI
             
-        if pI_start <= check_pI < pI_end:
-            filtered_properties.append(prop)
+        # A protein belongs to this capillary if its ORIGINAL pI was in this range
+        if pI_start <= original_pI < pI_end:
+            # Return: (protein_id, mw, (original_pI, current_pI))
+            filtered_properties.append((protein_id, mw, (original_pI, current_pI)))
+            
     return filtered_properties
 
 def get_pI_range(properties1, properties2):
