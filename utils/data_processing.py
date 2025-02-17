@@ -63,6 +63,10 @@ def filter_by_molecular_weight(properties, min_mw=None, max_mw=None):
 
 def normalize_abundance(abundance1, abundance2, ratio1=50, ratio2=50, min_size=1, max_size=1000):
     """Normalize abundance values with ratio."""
+    # Create empty dictionaries for normalized abundances
+    normalized_abundance1 = {}
+    normalized_abundance2 = {}
+    
     # Handle special case where ratio is 0
     if ratio1 == 0:
         normalized_abundance1 = {k: 0 for k in abundance1.keys()}
@@ -94,9 +98,15 @@ def normalize_abundance(abundance1, abundance2, ratio1=50, ratio2=50, min_size=1
     # Only normalize for non-zero ratios
     if ratio1 > 0:
         normalized_abundance1 = {k: normalize(v, ratio1) for k, v in abundance1.items()}
+    else:
+        # When ratio is 0, set all abundances to 0
+        normalized_abundance1 = {k: 0 for k in abundance1.keys()}
     
     if ratio2 > 0:
         normalized_abundance2 = {k: normalize(v, ratio2) for k, v in abundance2.items()}
+    else:
+        # When ratio is 0, set all abundances to 0
+        normalized_abundance2 = {k: 0 for k in abundance2.keys()}
 
     return normalized_abundance1, normalized_abundance2
 
