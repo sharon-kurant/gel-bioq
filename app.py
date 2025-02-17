@@ -167,6 +167,9 @@ try:
             abundance1, abundance2, ratio1, ratio2
         )
         
+        # Filter out proteins with zero abundance
+        normalized_abundance1 = filter_zero_abundance_proteins(properties1, normalized_abundance1)
+        normalized_abundance2 = filter_zero_abundance_proteins(properties2, normalized_abundance2)
         # Create visualization tabs
         tab1, tab2 = st.tabs(["2D Gel Plot", "Capillary Analysis"])
         
