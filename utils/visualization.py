@@ -33,7 +33,7 @@ def create_gel_plot(
             pi = [prop[2] for prop in properties]
             mw = [prop[1] for prop in properties]
             log_mw = [logarithmic_transform(mw_val) for mw_val in mw]
-            sizes = [abundances.get(prop[0], 1) for prop in properties]
+            sizes = [abundances.get(prop[0], 0) for prop in properties]
             
             # Create marker that will be scaled into an ellipse
             if mw_scale != 1.0:

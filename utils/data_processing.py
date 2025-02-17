@@ -110,10 +110,6 @@ def normalize_abundance(abundance1, abundance2, ratio1=50, ratio2=50, min_size=1
 
     return normalized_abundance1, normalized_abundance2
 
-def filter_zero_abundance_proteins(properties, normalized_abundance):
-    """Filter out proteins with zero abundance."""
-    return [prop for prop in properties if normalized_abundance.get(prop[0], 0) > 0]
-
 def process_organism_data(organism_id, min_mw=None, max_mw=None):
     """Process all data for a single organism."""
     fasta_path, abundance_path = get_file_paths(organism_id)
