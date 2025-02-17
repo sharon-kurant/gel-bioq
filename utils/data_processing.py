@@ -63,17 +63,40 @@ def filter_by_molecular_weight(properties, min_mw=None, max_mw=None):
 
 def normalize_abundance(abundance1, abundance2, ratio1=50, ratio2=50, min_size=1, max_size=1000):
     """Normalize abundance values with ratio."""
-    all_values = [v * ratio1 / 100 for v in abundance1.values()] + [v * ratio2 / 100 for v in abundance2.values()]
+    # Handle special case where ratio is 0
+    if ratio1 == 0:
+        normalized_abundance1 = {k: 0 for k in abundance1.keys()}
+    if ratio2 == 0:
+        normalized_abundance2 = {k: 0 for k in abundance2.keys()}
+    
+    # If both ratios are 0, return early
+    if ratio1 == 0 and ratio2 == 0:
+        return {}, {}
+    
+    # Create list of values for normalization, only using non-zero ratios
+    all_values = []
+    if ratio1 > 0:
+        all_values.extend([v * ratio1 / 100 for v in abundance1.values()])
+    if ratio2 > 0:
+        all_values.extend([v * ratio2 / 100 for v in abundance2.values()])
+    
     min_abundance = min(all_values) if all_values else 0
     max_abundance = max(all_values) if all_values else 1
 
     def normalize(value, ratio):
+        if ratio == 0:
+            return 0
+        
         if max_abundance == min_abundance:
             return max_size
         return min_size + (max_size - min_size) * (value * ratio / 100 - min_abundance) / (max_abundance - min_abundance)
 
-    normalized_abundance1 = {k: normalize(v, ratio1) for k, v in abundance1.items()}
-    normalized_abundance2 = {k: normalize(v, ratio2) for k, v in abundance2.items()}
+    # Only normalize for non-zero ratios
+    if ratio1 > 0:
+        normalized_abundance1 = {k: normalize(v, ratio1) for k, v in abundance1.items()}
+    
+    if ratio2 > 0:
+        normalized_abundance2 = {k: normalize(v, ratio2) for k, v in abundance2.items()}
 
     return normalized_abundance1, normalized_abundance2
 
