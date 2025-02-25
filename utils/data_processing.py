@@ -21,7 +21,7 @@ def filter_sequences(sequences):
     """Filter out sequences containing ambiguous characters."""
     filtered_sequences = []
     for record in sequences:
-        if 'X' not in str(record.seq):
+        if "X" not in str(record.seq) and "*" not in str(record.seq):
             filtered_sequences.append(record)
     return filtered_sequences
 
