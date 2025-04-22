@@ -160,9 +160,10 @@ def generate_combined_heatmap(
         else:
             smile = amp * (np.abs(x_norm) ** smile_pow) * (1 - smile_s_coef * x_norm)
 
-        src_y = np.arange(h)[:,None] + smile
-        src_x = np.arange(w)[None,:]
-        heat  = map_coordinates(heat, [src_y, src_x], order=1, mode='nearest')
+        src_y = np.arange(h)[:, None] + smile            # shape (h, w)
+        src_x = np.tile(np.arange(w), (h, 1))            # shape (h, w)
+        heat = map_coordinates(heat, [src_y, src_x], order=1, mode='nearest')
+
 
     # 6b) edge fading
     if apply_edges:
