@@ -21,14 +21,20 @@ def main():
     st.sidebar.title("2‑D Gel Settings")
 
     # — Organism selectors —
-    orgs = scan_available_organisms()
-    if len(orgs) < 2:
+    # get the mapping name → numeric ID
+    ORGANISMS = scan_available_organisms()
+    org_names = list(ORGANISMS.keys())
+    if len(org_names) < 2:
         st.error("Need at least two organism datasets in data/")
         return
 
-    org1 = st.sidebar.selectbox("Organism 1", orgs, index=0)
-    org2 = st.sidebar.selectbox("Organism 2", orgs, index=1)
-
+    org1 = st.sidebar.selectbox("Organism 1", org_names, index=0)
+    org2 = st.sidebar.selectbox("Organism 2", org_names, index=1)
+    
+    # filter out the first organism from the second dropdown
+    org1_id = ORGANISMS[org1]   # e.g. "882"
+    org2_id = ORGANISMS[org2]
+    
     if org1 == org2:
         st.sidebar.error("Please pick two different organisms")
 
@@ -128,17 +134,21 @@ def main():
     # — Generate button —
     if st.sidebar.button("Generate"):
         # 1) Load & preprocess both organisms
-        rec1 = parse_fasta(f"data/fasta/fasta.v11.5.{org1}.fa")
+        fasta_path1 = f"data/fasta/fasta.v11.5.{org1_id}.fa"
+        rec1 = parse_fasta(fasta_path1)
         props1 = compute_protein_properties(rec1)
         props1 = filter_by_molecular_weight(props1, min_mw, max_mw)
         props1 = filter_by_abundance_threshold(props1, min_abund)
-        abund1 = parse_abundance(f"data/abundance/{org1}-WHOLE_ORGANISM-integrated.txt")
+        ab_path1 = f"data/abundance/{org1_id}-WHOLE_ORGANISM-integrated.txt"
+        abund1 = parse_abundance(ab_path1)
 
-        rec2 = parse_fasta(f"data/fasta/fasta.v11.5.{org2}.fa")
+        fasta_path2 = f"data/fasta/fasta.v11.5.{org2_id}.fa"
+        rec2 = parse_fasta(fasta_path2)
         props2 = compute_protein_properties(rec2)
         props2 = filter_by_molecular_weight(props2, min_mw, max_mw)
         props2 = filter_by_abundance_threshold(props2, min_abund)
-        abund2 = parse_abundance(f"data/abundance/{org2}-WHOLE_ORGANISM-integrated.txt")
+        ab_path2 = f"data/abundance/{org2}-WHOLE_ORGANISM-integrated.txt"
+        abund2 = parse_abundance(ab_path2)
 
         norm1, norm2 = normalize_abundance(
             abund1, abund2, ratio1, ratio2
