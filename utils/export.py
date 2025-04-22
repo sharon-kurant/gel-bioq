@@ -1,5 +1,3 @@
-# utils/export.py
-
 import io
 import json
 import zipfile
@@ -13,15 +11,23 @@ def create_download_package(
         capillary_data: list = None,
         x_values: np.ndarray = None
     ) -> io.BytesIO:
+    
     """
-    Bundle parameters, heatmap, and capillary figures + data into a ZIP.
+    Bundle parameters, figures, and raw data into an in‑memory ZIP.
 
-    Now names:
-      - capillaries_combined.png  / .csv
-      - capillary_1.png  / .csv
-      - capillary_2.png  / .csv
-      ...
+    Contents:
+      - parameters.json
+      - heatmap.png
+      - heatmap.csv
+      - capillary_i.png (if capillary_figs provided)
+      - capillary_i.csv (if capillary_data & x_values provided)
+
+    Returns
+    -------
+    buf : io.BytesIO
+        A seekable buffer containing the ZIP file.
     """
+    
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, mode='w', compression=zipfile.ZIP_DEFLATED) as z:
         # 1) parameters.json
@@ -82,3 +88,5 @@ def create_download_package(
 
     buf.seek(0)
     return buf
+
+
