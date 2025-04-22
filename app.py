@@ -118,8 +118,8 @@ def main():
 
     # — Grid size & seed —
     st.sidebar.subheader("Grid & Seed")
-    grid_w = st.sidebar.number_input("Grid width", 100, 2000, 500)
-    grid_h = st.sidebar.number_input("Grid height", 100, 2000, 500)
+    grid_w = st.sidebar.number_input("Grid width", 100, 2000, 300)
+    grid_h = st.sidebar.number_input("Grid height", 100, 2000, 300)
     random_seed = st.sidebar.number_input("Random seed", value=42, step=1)
 
     # — Capillary analysis —
@@ -130,17 +130,93 @@ def main():
     if not st.session_state.generated:
         st.info(
             """
-            **Welcome to the 2D Gel Electrophoresis Dashboard!**  
-            
-            1. Pick two different organisms in the sidebar.  
-            2. Set your MW & abundance filters.  
-            3. Choose sample mix ratios.  
-            4. Toggle & parameterize artefacts (streaks, trains, smile, edges, dropout, abundance noise).  
-            5. Adjust blob σ‑factors, grid size & random seed.  
-            6. Define capillary settings (number & smoothing).  
-            
-            When you’re ready, click **Generate** to build your heatmap and capillary plots.
-            """
+            ## 1. Organism selectors  
+            - **Organism 1 / Organism 2**  
+            - Pick two different proteomes from `data/fasta/` & `data/abundance/`.  
+            - Their relative proportions in the mix are set by the “Sample ratios” slider.
+
+            ---
+
+            ## 2. Filters  
+            - **Min / Max MW (Da)**  
+            - Only proteins between these molecular‐weight bounds are shown.  
+            - **Min normalized abundance**  
+            - Discard low‐abundance spots below this threshold (0.0–1.0).
+
+            ---
+
+            ## 3. Sample mix ratios  
+            - **Organism 1 ratio (%)**  
+            - 0–100 % slider; Organism 2 gets the complement.  
+            - Controls how strongly each proteome contributes.
+
+            ---
+
+            ## 4. Heatmap artefacts  
+            Toggle each on/off; when on, adjust its parameters:
+
+            ### A. Streaks  
+            - **Orientation**: `both` / `horizontal` / `vertical`  
+            - **Probability**: fraction of spots turned into smears (0.0–1.0)
+
+            ### B. Spot trains  
+            - **N parents**: top‑abundance spots spawning satellites (exact or range)  
+            - **Decay factor**: 0.0–1.0, geometric drop per satellite  
+            - **pI offset**: multiples of σₓ between satellites
+
+            ### C. Smile distortion  
+            - **Amplitude**: 0.0–0.1 (fraction of gel height)  
+            - **Curve**: `quadratic` or `S`  
+            - **Power**: exponent on xₙₒᵣₘ (≥ 1.0)  
+            - **S‑coef**: asymmetry control when `S` is chosen
+
+            ### D. Edge fading  
+            - **Probability**: chance each side (L/R/T/B) is affected  
+            - **Strength**: `(start,end)` fade factors over the outer 8 %
+
+            ### E. Random dropout  
+            - **Drop fraction**: uniform range 0.0–0.5 of proteins to remove
+
+            ### F. Abundance variation  
+            - **Range**: `(min,max)` truncation for normal multipliers around 1.0  
+            - **σ**: standard deviation of that normal distribution
+
+            ---
+
+            ## 5. Blob σ‑multipliers  
+            - **σₓ factor** / **σᵧ factor** (0.001–0.02)  
+            - Scale each Gaussian spot’s width in pI/MW axes.
+
+            ---
+
+            ## 6. Grid & Seed  
+            - **Width / Height** (100–2000)  
+            - Pixel resolution (larger = finer detail).  
+            - **Random seed**  
+            - Fix to reproduce artefacts, dropout & noise.
+
+            ---
+
+            ## 7. Capillary analysis  
+            - **# Capillaries** (1–50)  
+            - Number of vertical pI slices to sum into line plots.  
+            - **Smoothing σ** (0.0–10.0)  
+            - Gaussian σ: small = sharp peaks; large = smoother curves.
+
+            ---
+
+            ### Generate  
+            1. Click **Generate**.  
+            2. A spinner appears (“Generating heatmap…”) while computations run.  
+            3. **Heatmap** tab: your in‑silico 2D gel.  
+            4. **Capillaries** tab: overlaid + individual line traces.  
+            5. **Download Results** gives a ZIP with:  
+            - `parameters.json`  
+            - `heatmap.png` + `.csv`  
+            - `capillaries_combined.png` + `.csv`  
+            - `capillary_1.png/.csv`, `capillary_2.png/.csv`, …  
+
+                        """
         )
 
     # — Generate button —
