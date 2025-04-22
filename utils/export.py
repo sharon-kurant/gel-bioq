@@ -61,20 +61,8 @@ def create_download_package(
 
         # 4) capillary data CSVs
         if capillary_data is not None and x_values is not None:
-            # Combined profile = first entry
-            combined_csv = io.StringIO()
-            combined_arr = np.column_stack((x_values, capillary_data[0]))
-            np.savetxt(
-                combined_csv,
-                combined_arr,
-                delimiter=',',
-                header='MW_kDa,Abundance',
-                comments=''
-            )
-            z.writestr('capillaries_combined.csv', combined_csv.getvalue())
-
             # Individual capillaries
-            for idx, y in enumerate(capillary_data[1:], start=1):
+            for idx, y in enumerate(capillary_data, start=1):
                 cap_csv = io.StringIO()
                 arr = np.column_stack((x_values, y))
                 np.savetxt(
