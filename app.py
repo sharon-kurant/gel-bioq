@@ -136,33 +136,26 @@ def main():
     # — Generate button —
     if st.sidebar.button("Generate"):
         # 1) Load & preprocess both organisms
-        
         fasta_path1 = f"data/fasta/fasta.v11.5.{org1_id}.fa"
         rec1 = parse_fasta(fasta_path1)
         props1 = compute_protein_properties(rec1)
         props1 = filter_by_molecular_weight(props1, min_mw, max_mw)
         props1 = filter_by_abundance_threshold(props1, min_abund)
-        ab_path1 = f"data/abundance/{org1_id}-WHOLE_ORGANISM-integrated.txt"
-        abund1 = parse_abundance(ab_path1)
+        abund1 = parse_abundance(f"data/abundance/{org1_id}-WHOLE_ORGANISM-integrated.txt")
 
         fasta_path2 = f"data/fasta/fasta.v11.5.{org2_id}.fa"
         rec2 = parse_fasta(fasta_path2)
         props2 = compute_protein_properties(rec2)
         props2 = filter_by_molecular_weight(props2, min_mw, max_mw)
         props2 = filter_by_abundance_threshold(props2, min_abund)
-        ab_path2 = f"data/abundance/{org2_id}-WHOLE_ORGANISM-integrated.txt"
-        abund2 = parse_abundance(ab_path2)
+        abund2 = parse_abundance(f"data/abundance/{org2_id}-WHOLE_ORGANISM-integrated.txt")
 
-        norm1, norm2 = normalize_abundance(
-            abund1, abund2, ratio1, ratio2
-        )
-
-        # 2) Merge for heatmap
+        norm1, norm2 = normalize_abundance(abund1, abund2, ratio1, ratio2)
         merged1 = [(*t, norm1[t[0]]) for t in props1 if t[0] in norm1]
         merged2 = [(*t, norm2[t[0]]) for t in props2 if t[0] in norm2]
         combined = merged1 + merged2
 
-        # 3) Generate & show heatmap
+        # 2) Generate heatmap
         heat, extent = generate_combined_heatmap(
             combined,
             grid_size=(grid_h, grid_w),
@@ -190,16 +183,22 @@ def main():
             sigma_y_factor=sigma_y_factor,
             random_seed=random_seed
         )
-        fig = plot_heatmap(heat, extent)
-        st.pyplot(fig)
+        heat_fig = plot_heatmap(heat, extent)
 
-        # 4) Capillary tab
-        st.markdown("### Capillary analysis")
-        plot_capillary_traces(heat, extent, cap_amount, smoothing)
+        # 3) Tabbed display
+        tab_heat, tab_caps = st.tabs(["Heatmap", "Capillaries"])
 
-        # 5) Download package
+        with tab_heat:
+            st.header("2D Gel Heatmap")
+            st.pyplot(heat_fig)
+
+        with tab_caps:
+            st.header("Capillary Traces")
+            plot_capillary_traces(heat, extent, cap_amount, smoothing)
+
+        # 4) Download package
         params = dict(
-            org1=org1, org2=org2, org1_id=org1_id, org2_id=org2_id, min_mw=min_mw, max_mw=max_mw,
+            org1=org1, org2=org2, min_mw=min_mw, max_mw=max_mw,
             min_abund=min_abund, ratio1=ratio1, ratio2=ratio2,
             streaks=(apply_streaks, streak_orient, streak_prob),
             trains=(apply_spot_trains, train_N, train_decay, train_offset),
@@ -212,7 +211,12 @@ def main():
             capillaries=(cap_amount, smoothing)
         )
         buf = create_download_package(
-            params, fig, heat, None, None, None
+            params,
+            heat_fig,
+            heat,
+            capillary_figs=None,       # or supply if you capture them
+            capillary_data=None,
+            x_values=None
         )
         st.download_button("Download Results", data=buf, file_name="results.zip")
 
