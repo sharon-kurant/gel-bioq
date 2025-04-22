@@ -18,24 +18,18 @@ from utils.export import create_download_package
 
 def main():
     st.set_page_config(page_title="2D Gel Dashboard", layout="wide")
+
+    # ─── Session state ────────────────────────────────────────
+    if 'generated' not in st.session_state:
+        st.session_state.generated = False
+
+    # ─── Sidebar ───────────────────────────────────────────────
     st.sidebar.title("2‑D Gel Settings")
-
-    # — Organism selectors —
-    # get the mapping name → numeric ID
     ORGANISMS = scan_available_organisms()
-    
-    if len(list(ORGANISMS.keys())) < 2:
-        st.error("Need at least two organism datasets in data/")
-        return
-
-    org1 = st.sidebar.selectbox("Organism 1", list(ORGANISMS.keys()), index=0)
-    org2 = st.sidebar.selectbox("Organism 2", list(ORGANISMS.keys()), index=1)
-    
-    # filter out the first organism from the second dropdown
-    org1_id = ORGANISMS[org1]   # e.g. "882"
-    # print(org1, org1_id)
-    org2_id = ORGANISMS[org2]
-    # print(org2, org2_id)
+    org_names = list(ORGANISMS.keys())
+    org1 = st.sidebar.selectbox("Organism 1", org_names, index=0)
+    org2 = st.sidebar.selectbox("Organism 2", org_names, index=1)
+    org1_id, org2_id = ORGANISMS[org1], ORGANISMS[org2] # e.g. "882"
     
     if org1 == org2:
         st.sidebar.error("Please pick two different organisms")
@@ -132,58 +126,77 @@ def main():
     st.sidebar.subheader("Capillary analysis")
     cap_amount = st.sidebar.number_input("Number of capillaries", 1, 50, 10)
     smoothing = st.sidebar.slider("Smoothing σ", 0.0, 10.0, 1.0)
+    
+    if not st.session_state.generated:
+        st.info(
+            """
+            **Welcome to the 2D Gel Electrophoresis Dashboard!**  
+            
+            1. Pick two different organisms in the sidebar.  
+            2. Set your MW & abundance filters.  
+            3. Choose sample mix ratios.  
+            4. Toggle & parameterize artefacts (streaks, trains, smile, edges, dropout, abundance noise).  
+            5. Adjust blob σ‑factors, grid size & random seed.  
+            6. Define capillary settings (number & smoothing).  
+            
+            When you’re ready, click **Generate** to build your heatmap and capillary plots.
+            """
+        )
 
     # — Generate button —
     if st.sidebar.button("Generate"):
-        # 1) Load & preprocess both organisms
-        fasta_path1 = f"data/fasta/fasta.v11.5.{org1_id}.fa"
-        rec1 = parse_fasta(fasta_path1)
-        props1 = compute_protein_properties(rec1)
-        props1 = filter_by_molecular_weight(props1, min_mw, max_mw)
-        props1 = filter_by_abundance_threshold(props1, min_abund)
-        abund1 = parse_abundance(f"data/abundance/{org1_id}-WHOLE_ORGANISM-integrated.txt")
+        st.session_state.generated = True
 
-        fasta_path2 = f"data/fasta/fasta.v11.5.{org2_id}.fa"
-        rec2 = parse_fasta(fasta_path2)
-        props2 = compute_protein_properties(rec2)
-        props2 = filter_by_molecular_weight(props2, min_mw, max_mw)
-        props2 = filter_by_abundance_threshold(props2, min_abund)
-        abund2 = parse_abundance(f"data/abundance/{org2_id}-WHOLE_ORGANISM-integrated.txt")
+        with st.spinner("Generating heatmap..."):
+            # 1) Load & preprocess both organisms
+            fasta_path1 = f"data/fasta/fasta.v11.5.{org1_id}.fa"
+            rec1 = parse_fasta(fasta_path1)
+            props1 = compute_protein_properties(rec1)
+            props1 = filter_by_molecular_weight(props1, min_mw, max_mw)
+            props1 = filter_by_abundance_threshold(props1, min_abund)
+            abund1 = parse_abundance(f"data/abundance/{org1_id}-WHOLE_ORGANISM-integrated.txt")
 
-        norm1, norm2 = normalize_abundance(abund1, abund2, ratio1, ratio2)
-        merged1 = [(*t, norm1[t[0]]) for t in props1 if t[0] in norm1]
-        merged2 = [(*t, norm2[t[0]]) for t in props2 if t[0] in norm2]
-        combined = merged1 + merged2
+            fasta_path2 = f"data/fasta/fasta.v11.5.{org2_id}.fa"
+            rec2 = parse_fasta(fasta_path2)
+            props2 = compute_protein_properties(rec2)
+            props2 = filter_by_molecular_weight(props2, min_mw, max_mw)
+            props2 = filter_by_abundance_threshold(props2, min_abund)
+            abund2 = parse_abundance(f"data/abundance/{org2_id}-WHOLE_ORGANISM-integrated.txt")
 
-        # 2) Generate heatmap
-        heat, extent = generate_combined_heatmap(
-            combined,
-            grid_size=(grid_h, grid_w),
-            apply_streaks=apply_streaks,
-            streak_orient=streak_orient,
-            streak_prob=streak_prob,
-            apply_spot_trains=apply_spot_trains,
-            train_N=train_N,
-            train_decay=train_decay,
-            train_offset=train_offset,
-            apply_smile=apply_smile,
-            smile_rel_amp=smile_rel_amp,
-            smile_curve=smile_curve,
-            smile_pow=smile_pow,
-            smile_s_coef=smile_s_coef,
-            apply_edges=apply_edges,
-            edge_prob=edge_prob,
-            edge_strength=edge_strength,
-            apply_dropout=apply_dropout,
-            drop_frac_range=drop_frac_range,
-            apply_abundance_variation=apply_abundance_variation,
-            abundance_var_range=abundance_var_range,
-            abundance_var_sd=abundance_var_sd,
-            sigma_x_factor=sigma_x_factor,
-            sigma_y_factor=sigma_y_factor,
-            random_seed=random_seed
-        )
-        heat_fig = plot_heatmap(heat, extent)
+            norm1, norm2 = normalize_abundance(abund1, abund2, ratio1, ratio2)
+            merged1 = [(*t, norm1[t[0]]) for t in props1 if t[0] in norm1]
+            merged2 = [(*t, norm2[t[0]]) for t in props2 if t[0] in norm2]
+            combined = merged1 + merged2
+
+            # 2) Generate heatmap
+            heat, extent = generate_combined_heatmap(
+                combined,
+                grid_size=(grid_h, grid_w),
+                apply_streaks=apply_streaks,
+                streak_orient=streak_orient,
+                streak_prob=streak_prob,
+                apply_spot_trains=apply_spot_trains,
+                train_N=train_N,
+                train_decay=train_decay,
+                train_offset=train_offset,
+                apply_smile=apply_smile,
+                smile_rel_amp=smile_rel_amp,
+                smile_curve=smile_curve,
+                smile_pow=smile_pow,
+                smile_s_coef=smile_s_coef,
+                apply_edges=apply_edges,
+                edge_prob=edge_prob,
+                edge_strength=edge_strength,
+                apply_dropout=apply_dropout,
+                drop_frac_range=drop_frac_range,
+                apply_abundance_variation=apply_abundance_variation,
+                abundance_var_range=abundance_var_range,
+                abundance_var_sd=abundance_var_sd,
+                sigma_x_factor=sigma_x_factor,
+                sigma_y_factor=sigma_y_factor,
+                random_seed=random_seed
+            )
+            heat_fig = plot_heatmap(heat, extent)
 
         # 3) Tabbed display
         tab_heat, tab_caps = st.tabs(["Heatmap", "Capillaries"])
@@ -194,7 +207,10 @@ def main():
 
         with tab_caps:
             st.header("Capillary Traces")
-            plot_capillary_traces(heat, extent, cap_amount, smoothing)
+            # now we explicitly render each figure
+            cap_figs = plot_capillary_traces(heat, extent, cap_amount, smoothing)
+            for fig in cap_figs:
+                st.pyplot(fig)
 
         # 4) Download package
         params = dict(
