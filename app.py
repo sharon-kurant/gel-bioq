@@ -33,9 +33,9 @@ def main():
     
     # filter out the first organism from the second dropdown
     org1_id = ORGANISMS[org1]   # e.g. "882"
-    print(org1, org1_id)
+    # print(org1, org1_id)
     org2_id = ORGANISMS[org2]
-    print(org2, org2_id)
+    # print(org2, org2_id)
     
     if org1 == org2:
         st.sidebar.error("Please pick two different organisms")
@@ -136,6 +136,7 @@ def main():
     # — Generate button —
     if st.sidebar.button("Generate"):
         # 1) Load & preprocess both organisms
+        
         fasta_path1 = f"data/fasta/fasta.v11.5.{org1_id}.fa"
         rec1 = parse_fasta(fasta_path1)
         props1 = compute_protein_properties(rec1)
@@ -149,7 +150,7 @@ def main():
         props2 = compute_protein_properties(rec2)
         props2 = filter_by_molecular_weight(props2, min_mw, max_mw)
         props2 = filter_by_abundance_threshold(props2, min_abund)
-        ab_path2 = f"data/abundance/{org2}-WHOLE_ORGANISM-integrated.txt"
+        ab_path2 = f"data/abundance/{org2_id}-WHOLE_ORGANISM-integrated.txt"
         abund2 = parse_abundance(ab_path2)
 
         norm1, norm2 = normalize_abundance(
@@ -198,7 +199,7 @@ def main():
 
         # 5) Download package
         params = dict(
-            org1=org1, org2=org2, min_mw=min_mw, max_mw=max_mw,
+            org1=org1, org2=org2, org1_id=org1_id, org2_id=org2_id, min_mw=min_mw, max_mw=max_mw,
             min_abund=min_abund, ratio1=ratio1, ratio2=ratio2,
             streaks=(apply_streaks, streak_orient, streak_prob),
             trains=(apply_spot_trains, train_N, train_decay, train_offset),
