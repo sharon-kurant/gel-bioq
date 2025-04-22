@@ -128,17 +128,17 @@ def main():
     # — Generate button —
     if st.sidebar.button("Generate"):
         # 1) Load & preprocess both organisms
-        rec1 = parse_fasta(f"data/{org1}.fasta")
+        rec1 = parse_fasta(f"data/fasta/fasta.v11.5.{org1}.fa")
         props1 = compute_protein_properties(rec1)
         props1 = filter_by_molecular_weight(props1, min_mw, max_mw)
         props1 = filter_by_abundance_threshold(props1, min_abund)
-        abund1 = parse_abundance(f"data/{org1}.abund.txt")
+        abund1 = parse_abundance(f"data/abundance/{org1}-WHOLE_ORGANISM-integrated.txt")
 
-        rec2 = parse_fasta(f"data/{org2}.fasta")
+        rec2 = parse_fasta(f"data/fasta/fasta.v11.5.{org2}.fa")
         props2 = compute_protein_properties(rec2)
         props2 = filter_by_molecular_weight(props2, min_mw, max_mw)
         props2 = filter_by_abundance_threshold(props2, min_abund)
-        abund2 = parse_abundance(f"data/{org2}.abund.txt")
+        abund2 = parse_abundance(f"data/abundance/{org2}-WHOLE_ORGANISM-integrated.txt")
 
         norm1, norm2 = normalize_abundance(
             abund1, abund2, ratio1, ratio2
