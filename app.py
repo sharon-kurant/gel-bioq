@@ -23,17 +23,19 @@ def main():
     # — Organism selectors —
     # get the mapping name → numeric ID
     ORGANISMS = scan_available_organisms()
-    org_names = list(ORGANISMS.keys())
-    if len(org_names) < 2:
+    
+    if len(list(ORGANISMS.keys())) < 2:
         st.error("Need at least two organism datasets in data/")
         return
 
-    org1 = st.sidebar.selectbox("Organism 1", org_names, index=0)
-    org2 = st.sidebar.selectbox("Organism 2", org_names, index=1)
+    org1 = st.sidebar.selectbox("Organism 1", list(ORGANISMS.keys()), index=0)
+    org2 = st.sidebar.selectbox("Organism 2", list(ORGANISMS.keys()), index=1)
     
     # filter out the first organism from the second dropdown
     org1_id = ORGANISMS[org1]   # e.g. "882"
+    print(org1, org1_id)
     org2_id = ORGANISMS[org2]
+    print(org2, org2_id)
     
     if org1 == org2:
         st.sidebar.error("Please pick two different organisms")
