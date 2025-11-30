@@ -27,8 +27,8 @@ def main():
     st.sidebar.title("2‑D Gel Settings")
     ORGANISMS = scan_available_organisms()
     org_names = list(ORGANISMS.keys())
-    org1 = st.sidebar.selectbox("Organism 1", org_names, index=0)
-    org2 = st.sidebar.selectbox("Organism 2", org_names, index=1)
+    org1 = st.sidebar.selectbox("Organism 1", org_names, index=0)
+    org2 = st.sidebar.selectbox("Organism 2", org_names, index=1)
     org1_id, org2_id = ORGANISMS[org1], ORGANISMS[org2] # e.g. "882"
     
     if org1 == org2:
@@ -42,183 +42,42 @@ def main():
 
     # — Sample ratios —
     st.sidebar.subheader("Sample ratios (%)")
-    ratio1 = st.sidebar.slider("Organism 1 ratio", 0, 100, 80)
+    ratio1 = st.sidebar.slider("Organism 1 ratio", 0, 100, 80)
     ratio2 = 100 - ratio1
-    st.sidebar.markdown(f"**Organism 2 ratio:** {ratio2}%")
+    st.sidebar.markdown(f"**Organism 2 ratio:** {ratio2}%")
 
-    # — Artefact toggles & parameters —
-    st.sidebar.subheader("Heatmap artefacts")
-
-    # 1) Streaks
-    apply_streaks = st.sidebar.checkbox("Apply streaks", value=True)
-    if apply_streaks:
-        streak_orient = st.sidebar.selectbox(
-            "Orientation", ["both", "horizontal", "vertical"], index=0
-        )
-        streak_prob = st.sidebar.slider("Streak probability", 0.0, 1.0, 0.12)
-    else:
-        streak_orient, streak_prob = "both", 0.12
-
-    # 2) Spot trains
-    apply_spot_trains = st.sidebar.checkbox("Apply spot trains", value=True)
-    if apply_spot_trains:
-        train_N = st.sidebar.slider("N parents", 1, 100, (10, 50))
-        train_decay = st.sidebar.slider("Decay factor", 0.0, 1.0, 0.55)
-        train_offset = st.sidebar.slider("pI offset (σ)", 0.0, 2.0, 0.9)
-    else:
-        train_N, train_decay, train_offset = (10, 50), 0.55, 0.9
-
-    # 3) Smile distortion
-    apply_smile = st.sidebar.checkbox("Apply smile", value=True)
-    if apply_smile:
-        smile_rel_amp = st.sidebar.slider("Smile amplitude", 0.0, 0.1, 0.02)
-        smile_curve = st.sidebar.selectbox("Curve shape", ["S", "quadratic"], index=0)
-        smile_pow = st.sidebar.slider("Smile power", 1.0, 5.0, 2.0)
-        smile_s_coef = st.sidebar.slider("S‑coef", 0.0, 1.0, 0.3)
-    else:
-        smile_rel_amp, smile_curve, smile_pow, smile_s_coef = 0.02, "S", 2.0, 0.3
-
-    # 4) Edge fading
-    apply_edges = st.sidebar.checkbox("Apply edges", value=True)
-    if apply_edges:
-        edge_prob = st.sidebar.slider("Edge probability", 0.0, 1.0, 0.60)
-        edge_strength = st.sidebar.slider(
-            "Edge strength", 0.5, 2.0, (1.35, 1.0)
-        )
-    else:
-        edge_prob, edge_strength = 0.60, (1.35, 1.0)
-
-    # 5) Dropout
-    apply_dropout = st.sidebar.checkbox("Random dropout", value=False)
-    if apply_dropout:
-        drop_frac_range = st.sidebar.slider(
-            "Drop fraction range", 0.0, 0.5, (0.0, 0.2)
-        )
-    else:
-        drop_frac_range = (0.0, 0.0)
-
-    # 6) Abundance variation
-    apply_abundance_variation = st.sidebar.checkbox(
-        "Abundance variation", value=False
+    # — Rendering —
+    st.sidebar.subheader("Rendering")
+    sigma_x_factor = st.sidebar.number_input(
+        label="σ_x factor", min_value=0.001, step=0.0001, max_value=0.02, value=0.006, format="%.4f"
     )
-    if apply_abundance_variation:
-        abundance_var_range = st.sidebar.slider(
-            "Abund. range", 0.1, 5.0, (0.5, 2.0)
-        )
-        abundance_var_sd = st.sidebar.slider(
-            "Abund. σ", 0.0, 1.0, 0.3
-        )
-    else:
-        abundance_var_range, abundance_var_sd = (1.0, 1.0), 0.0
-
-    # — Gaussian blob widths —
-    st.sidebar.subheader("Blob σ‑multipliers")
-    #sigma_x_factor = st.sidebar.slider("σ_x factor", 0.001, 0.02, 0.005)
-    #sigma_y_factor = st.sidebar.slider("σ_y factor", 0.001, 0.02, 0.005)
-    # st.sidebar.slider("Min normalized abundance", 0.0, 1.0, 0.0)
-    sigma_x_factor = st.sidebar.number_input(label="σ_x factor", min_value=0.001, step=0.0001, max_value=0.02, value=0.005, format="%.4f")
-    sigma_y_factor = st.sidebar.number_input(label="σ_y factor", min_value=0.001, step=0.0001, max_value=0.02, value=0.005, format="%.4f")
-    # — Grid size & seed —
-    st.sidebar.subheader("Grid & Seed")
-    grid_w = st.sidebar.number_input("Grid width", 100, 2000, 300)
-    grid_h = st.sidebar.number_input("Grid height", 100, 2000, 300)
-    random_seed = st.sidebar.number_input("Random seed", value=42, step=1)
+    sigma_y_factor = st.sidebar.number_input(
+        label="σ_y factor", min_value=0.001, step=0.0001, max_value=0.02, value=0.004, format="%.4f"
+    )
+    bleed_sigma = st.sidebar.slider("Stain bleed σ", 0.5, 8.0, 3.5)
+    smear_strength = st.sidebar.slider("Smear strength", 0.0, 1.0, 0.45)
+    paper_texture = st.sidebar.slider("Paper texture", 0.0, 0.6, 0.28)
+    scan_noise = st.sidebar.slider("Scan noise", 0.0, 0.6, 0.2)
+    tone_gamma = st.sidebar.slider("Tone curve γ", 0.3, 2.0, 0.8)
+    haze_strength = st.sidebar.slider("Bloom strength", 0.0, 1.0, 0.25)
+    grid_w = st.sidebar.number_input("Grid width", 200, 2000, 900)
+    grid_h = st.sidebar.number_input("Grid height", 200, 2000, 1100)
+    random_seed = st.sidebar.number_input("Random seed", value=1337, step=1)
 
     # — Capillary analysis —
     st.sidebar.subheader("Capillary analysis")
-    cap_amount = st.sidebar.number_input("Number of capillaries", 1, 50, 4)
-    smoothing = st.sidebar.slider("Smoothing σ", 0.0, 10.0, 1.0)
+    cap_amount = st.sidebar.number_input("Number of capillaries", 1, 50, 6)
+    smoothing = st.sidebar.slider("Smoothing σ", 0.0, 10.0, 1.5)
     
     if not st.session_state.generated:
         st.info(
             """
-            ## 1. Organism selectors  
-            - **Organism 1 / Organism 2**  
-            - Pick two different proteomes from `data/fasta/` & `data/abundance/`.  
-            - Their relative proportions in the mix are set by the “Sample ratios” slider.
-
-            ---
-
-            ## 2. Filters  
-            - **Min / Max MW (Da)**  
-            - Only proteins between these molecular‐weight bounds are shown.  
-            - **Min normalized abundance**  
-            - Discard low‐abundance spots below this threshold (0.0–1.0).
-
-            ---
-
-            ## 3. Sample mix ratios  
-            - **Organism 1 ratio (%)**  
-            - 0–100 % slider; Organism 2 gets the complement.  
-            - Controls how strongly each proteome contributes.
-
-            ---
-
-            ## 4. Heatmap artefacts  
-            Toggle each on/off; when on, adjust its parameters:
-
-            ### A. Streaks  
-            - **Orientation**: `both` / `horizontal` / `vertical`  
-            - **Probability**: fraction of spots turned into smears (0.0–1.0)
-
-            ### B. Spot trains  
-            - **N parents**: top‑abundance spots spawning satellites (exact or range)  
-            - **Decay factor**: 0.0–1.0, geometric drop per satellite  
-            - **pI offset**: multiples of σₓ between satellites
-
-            ### C. Smile distortion  
-            - **Amplitude**: 0.0–0.1 (fraction of gel height)  
-            - **Curve**: `quadratic` or `S`  
-            - **Power**: exponent on xₙₒᵣₘ (≥ 1.0)  
-            - **S‑coef**: asymmetry control when `S` is chosen
-
-            ### D. Edge fading  
-            - **Probability**: chance each side (L/R/T/B) is affected  
-            - **Strength**: `(start,end)` fade factors over the outer 8 %
-
-            ### E. Random dropout  
-            - **Drop fraction**: uniform range 0.0–0.5 of proteins to remove
-
-            ### F. Abundance variation  
-            - **Range**: `(min,max)` truncation for normal multipliers around 1.0  
-            - **σ**: standard deviation of that normal distribution
-
-            ---
-
-            ## 5. Blob σ‑multipliers  
-            - **σₓ factor** / **σᵧ factor** (0.001–0.02)  
-            - Scale each Gaussian spot’s width in pI/MW axes.
-
-            ---
-
-            ## 6. Grid & Seed  
-            - **Width / Height** (100–2000)  
-            - Pixel resolution (larger = finer detail).  
-            - **Random seed**  
-            - Fix to reproduce artefacts, dropout & noise.
-
-            ---
-
-            ## 7. Capillary analysis  
-            - **# Capillaries** (1–50)  
-            - Number of vertical pI slices to sum into line plots.  
-            - **Smoothing σ** (0.0–10.0)  
-            - Gaussian σ: small = sharp peaks; large = smoother curves.
-
-            ---
-
-            ### Generate  
-            1. Click **Generate**.  
-            2. A spinner appears (“Generating heatmap…”) while computations run.  
-            3. **Heatmap** tab: your in‑silico 2D gel.  
-            4. **Capillaries** tab: overlaid + individual line traces.  
-            5. **Download Results** gives a ZIP with:  
-            - `parameters.json`  
-            - `heatmap.png` + `.csv`  
-            - `capillaries_combined.png` + `.csv`  
-            - `capillary_1.png/.csv`, `capillary_2.png/.csv`, …  
-
-                        """
+            1) Choose two proteomes from `data/fasta/` + `data/abundance/` and set their mix.
+            2) Filter by molecular weight and normalized abundance.
+            3) Use the **Rendering** section to sculpt the gel look: spot widths (σₓ/σᵧ),
+               stain bleed, smear, paper texture, scan noise, tone curve, bloom, grid size, seed.
+            4) Generate to view the gel and capillary traces; download a ZIP of the outputs.
+            """
         )
 
     # — Generate button —
@@ -250,29 +109,15 @@ def main():
             heat, extent = generate_combined_heatmap(
                 combined,
                 grid_size=(grid_h, grid_w),
-                apply_streaks=apply_streaks,
-                streak_orient=streak_orient,
-                streak_prob=streak_prob,
-                apply_spot_trains=apply_spot_trains,
-                train_N=train_N,
-                train_decay=train_decay,
-                train_offset=train_offset,
-                apply_smile=apply_smile,
-                smile_rel_amp=smile_rel_amp,
-                smile_curve=smile_curve,
-                smile_pow=smile_pow,
-                smile_s_coef=smile_s_coef,
-                apply_edges=apply_edges,
-                edge_prob=edge_prob,
-                edge_strength=edge_strength,
-                apply_dropout=apply_dropout,
-                drop_frac_range=drop_frac_range,
-                apply_abundance_variation=apply_abundance_variation,
-                abundance_var_range=abundance_var_range,
-                abundance_var_sd=abundance_var_sd,
                 sigma_x_factor=sigma_x_factor,
                 sigma_y_factor=sigma_y_factor,
-                random_seed=random_seed
+                bleed_sigma=bleed_sigma,
+                smear_strength=smear_strength,
+                paper_texture=paper_texture,
+                scan_noise=scan_noise,
+                tone_gamma=tone_gamma,
+                haze_strength=haze_strength,
+                random_seed=random_seed,
             )
             heat_fig = plot_heatmap(heat, extent)
 
@@ -294,14 +139,18 @@ def main():
         params = dict(
             org1=org1, org2=org2, min_mw=min_mw, max_mw=max_mw,
             min_abund=min_abund, ratio1=ratio1, ratio2=ratio2,
-            streaks=(apply_streaks, streak_orient, streak_prob),
-            trains=(apply_spot_trains, train_N, train_decay, train_offset),
-            smile=(apply_smile, smile_rel_amp, smile_curve, smile_pow, smile_s_coef),
-            edges=(apply_edges, edge_prob, edge_strength),
-            dropout=(apply_dropout, drop_frac_range),
-            abund_var=(apply_abundance_variation, abundance_var_range, abundance_var_sd),
-            sigma_factors=(sigma_x_factor, sigma_y_factor),
-            grid=(grid_h, grid_w), seed=random_seed,
+            rendering=dict(
+                sigma_x_factor=sigma_x_factor,
+                sigma_y_factor=sigma_y_factor,
+                bleed_sigma=bleed_sigma,
+                smear_strength=smear_strength,
+                paper_texture=paper_texture,
+                scan_noise=scan_noise,
+                tone_gamma=tone_gamma,
+                bloom=haze_strength,
+                grid=(grid_h, grid_w),
+                seed=random_seed,
+            ),
             capillaries=(cap_amount, smoothing)
         )
         buf = create_download_package(
