@@ -88,19 +88,7 @@ def main():
     else:
         edge_prob, edge_strength = 0.60, (1.35, 1.0)
 
-    # 5) Realism tweaks
-    st.sidebar.subheader("Realism tweaks")
-    spot_irregularity = st.sidebar.checkbox("Spot irregularity", value=True)
-    spot_spread_jitter = st.sidebar.slider("Spot σ jitter", 0.5, 2.0, (0.75, 1.35))
-    spot_angle_jitter = st.sidebar.checkbox("Angle jitter", value=True)
-    background_intensity = st.sidebar.slider("Background stain", 0.0, 0.2, 0.02)
-    texture_strength = st.sidebar.slider("Texture strength", 0.0, 0.5, 0.18)
-    texture_scale = st.sidebar.slider("Texture scale", 0.2, 2.0, 0.85)
-    haze_strength = st.sidebar.slider("Haze strength", 0.0, 1.0, 0.35)
-    haze_sigma = st.sidebar.slider("Haze σ", 1.0, 20.0, 6.0)
-    dynamic_range_gamma = st.sidebar.slider("Dynamic range γ", 0.3, 1.5, 0.65)
-
-    # 6) Dropout
+    # 5) Dropout
     apply_dropout = st.sidebar.checkbox("Random dropout", value=False)
     if apply_dropout:
         drop_frac_range = st.sidebar.slider(
@@ -109,7 +97,7 @@ def main():
     else:
         drop_frac_range = (0.0, 0.0)
 
-    # 7) Abundance variation
+    # 6) Abundance variation
     apply_abundance_variation = st.sidebar.checkbox(
         "Abundance variation", value=False
     )
@@ -277,15 +265,6 @@ def main():
                 apply_edges=apply_edges,
                 edge_prob=edge_prob,
                 edge_strength=edge_strength,
-                spot_irregularity=spot_irregularity,
-                spot_spread_jitter=spot_spread_jitter,
-                spot_angle_jitter=spot_angle_jitter,
-                background_intensity=background_intensity,
-                texture_strength=texture_strength,
-                texture_scale=texture_scale,
-                haze_strength=haze_strength,
-                haze_sigma=haze_sigma,
-                dynamic_range_gamma=dynamic_range_gamma,
                 apply_dropout=apply_dropout,
                 drop_frac_range=drop_frac_range,
                 apply_abundance_variation=apply_abundance_variation,
@@ -319,17 +298,6 @@ def main():
             trains=(apply_spot_trains, train_N, train_decay, train_offset),
             smile=(apply_smile, smile_rel_amp, smile_curve, smile_pow, smile_s_coef),
             edges=(apply_edges, edge_prob, edge_strength),
-            realism=(
-                spot_irregularity,
-                spot_spread_jitter,
-                spot_angle_jitter,
-                background_intensity,
-                texture_strength,
-                texture_scale,
-                haze_strength,
-                haze_sigma,
-                dynamic_range_gamma
-            ),
             dropout=(apply_dropout, drop_frac_range),
             abund_var=(apply_abundance_variation, abundance_var_range, abundance_var_sd),
             sigma_factors=(sigma_x_factor, sigma_y_factor),
