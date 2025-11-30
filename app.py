@@ -115,8 +115,8 @@ def main():
     st.sidebar.subheader("Blob σ‑multipliers")
     #sigma_x_factor = st.sidebar.slider("σ_x factor", 0.001, 0.02, 0.005)
     #sigma_y_factor = st.sidebar.slider("σ_y factor", 0.001, 0.02, 0.005)
-    sigma_x_factor = st.sidebar.number_input("σ_x factor", 0.001, 0.02, 0.005, step=0.001)
-    sigma_y_factor = st.sidebar.number_input("σ_y factor", 0.001, 0.02, 0.005, step=0.001)
+    sigma_x_factor = st.sidebar.number_input("σ_x factor", 0.001, 0.025, 0.005, step=0.001)
+    sigma_y_factor = st.sidebar.number_input("σ_y factor", 0.001, 0.025, 0.005, step=0.001)
     # — Grid size & seed —
     st.sidebar.subheader("Grid & Seed")
     grid_w = st.sidebar.number_input("Grid width", 100, 2000, 300)
