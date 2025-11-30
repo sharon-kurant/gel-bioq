@@ -116,8 +116,8 @@ def main():
     #sigma_x_factor = st.sidebar.slider("σ_x factor", 0.001, 0.02, 0.005)
     #sigma_y_factor = st.sidebar.slider("σ_y factor", 0.001, 0.02, 0.005)
     # st.sidebar.slider("Min normalized abundance", 0.0, 1.0, 0.0)
-    sigma_x_factor = st.sidebar.number_input(label="σ_x factor", min_value=0.001, step=0.0001, max_value=0.02, value=0.0005, format="%f")
-    sigma_y_factor = st.sidebar.number_input(label="σ_y factor", min_value=0.001, step=0.0001, max_value=0.02, value=0.0005, format="%f")
+    sigma_x_factor = st.sidebar.number_input(label="σ_x factor", min_value=0.001, step=0.0001, max_value=0.02, value=0.005, format="%f")
+    sigma_y_factor = st.sidebar.number_input(label="σ_y factor", min_value=0.001, step=0.0001, max_value=0.02, value=0.005, format="%f")
     # — Grid size & seed —
     st.sidebar.subheader("Grid & Seed")
     grid_w = st.sidebar.number_input("Grid width", 100, 2000, 300)
