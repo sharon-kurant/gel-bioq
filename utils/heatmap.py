@@ -101,7 +101,9 @@ def generate_combined_heatmap(
     # 2) Abundance variation
     if apply_abundance_variation:
         varied = []
-@@ -96,60 +107,82 @@ def generate_combined_heatmap(
+        for pid, mw, pi, abund in data:
+            factor = None
+            while factor is None or not (abundance_var_range[0] <= factor <= abundance_var_range[1]):
                 factor = rng.normal(1.0, abundance_var_sd)
             varied.append((pid, mw, pi, abund * factor))
         data = varied
@@ -127,7 +129,6 @@ def generate_combined_heatmap(
     # 4) Spots + streaks
     for pid, mw, pi, abund in data:
         cy = ln_transform(mw / 1000)
-
         # spot‑specific width & angle
         spot_sig_x = sig_x
         spot_sig_y = sig_y
@@ -138,6 +139,7 @@ def generate_combined_heatmap(
 
         stretch_x = 1.0
         stretch_y = 1.0
+
         if apply_streaks and rng.random() < streak_prob:
             orient = streak_orient
             if orient == 'both':
@@ -184,7 +186,11 @@ def generate_combined_heatmap(
     h, w = grid_size
     # 6a) smile
     if apply_smile:
-@@ -161,58 +194,96 @@ def generate_combined_heatmap(
+        x_norm = np.linspace(-1, 1, w)
+        amp    = smile_rel_amp * h
+        if smile_curve == 'quadratic':
+            smile = amp * (np.abs(x_norm) ** smile_pow)
+        else:
             smile = amp * (np.abs(x_norm) ** smile_pow) * (1 - smile_s_coef * x_norm)
 
         src_y = np.arange(h)[:, None] + smile            # shape (h, w)
