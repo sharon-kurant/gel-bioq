@@ -2,7 +2,7 @@
 
 import numpy as np
 from scipy.stats import multivariate_normal
-from scipy.ndimage import map_coordinates
+from scipy.ndimage import gaussian_filter, map_coordinates
 from matplotlib.colors import LinearSegmentedColormap
 import matplotlib.pyplot as plt
 
@@ -46,6 +46,10 @@ def generate_combined_heatmap(
         # σ‑multipliers
         sigma_x_factor=0.005,
         sigma_y_factor=0.005,
+        # spot morphology
+        spot_irregularity=True,
+        spot_spread_jitter=(0.75, 1.35),
+        spot_angle_jitter=True,
         # streaks
         apply_streaks=True,
         streak_orient='both',
@@ -65,6 +69,13 @@ def generate_combined_heatmap(
         apply_edges=True,
         edge_prob=0.6,
         edge_strength=(1.35, 1.0),
+        # stain & haze
+        background_intensity=0.02,
+        texture_strength=0.18,
+        texture_scale=0.85,
+        haze_strength=0.35,
+        haze_sigma=6.0,
+        dynamic_range_gamma=0.65,
         # dropout & abundance noise
         apply_dropout=False,
         drop_frac_range=(0.0, 0.5),
@@ -90,9 +101,7 @@ def generate_combined_heatmap(
     # 2) Abundance variation
     if apply_abundance_variation:
         varied = []
-        for pid, mw, pi, abund in data:
-            factor = None
-            while factor is None or not (abundance_var_range[0] <= factor <= abundance_var_range[1]):
+@@ -96,60 +107,82 @@ def generate_combined_heatmap(
                 factor = rng.normal(1.0, abundance_var_sd)
             varied.append((pid, mw, pi, abund * factor))
         data = varied
@@ -118,16 +127,38 @@ def generate_combined_heatmap(
     # 4) Spots + streaks
     for pid, mw, pi, abund in data:
         cy = ln_transform(mw / 1000)
+
+        # spot‑specific width & angle
+        spot_sig_x = sig_x
+        spot_sig_y = sig_y
+        if spot_irregularity:
+            jitter = rng.uniform(*spot_spread_jitter, size=2)
+            spot_sig_x *= jitter[0]
+            spot_sig_y *= jitter[1]
+
+        stretch_x = 1.0
+        stretch_y = 1.0
         if apply_streaks and rng.random() < streak_prob:
             orient = streak_orient
             if orient == 'both':
                 orient = 'horizontal' if rng.random() < 0.5 else 'vertical'
             if orient == 'horizontal':
-                cov = [[(6*sig_x)**2, 0], [0, sig_y**2]]
+                stretch_x = 6.0
             else:
-                cov = [[sig_x**2, 0], [0, (6*sig_y)**2]]
-        else:
-            cov = [[sig_x**2, 0], [0, sig_y**2]]
+                stretch_y = 6.0
+
+        cov = np.array([
+            [(spot_sig_x * stretch_x) ** 2, 0],
+            [0, (spot_sig_y * stretch_y) ** 2]
+        ])
+
+        if spot_irregularity and spot_angle_jitter:
+            theta = rng.uniform(0, np.pi)
+            rot = np.array([
+                [np.cos(theta), -np.sin(theta)],
+                [np.sin(theta),  np.cos(theta)]
+            ])
+            cov = rot @ cov @ rot.T
 
         Z = multivariate_normal(mean=[pi, cy], cov=cov).pdf(np.dstack((X, Y)))
         heat += Z * (abund / Z.sum())
@@ -153,11 +184,7 @@ def generate_combined_heatmap(
     h, w = grid_size
     # 6a) smile
     if apply_smile:
-        x_norm = np.linspace(-1, 1, w)
-        amp    = smile_rel_amp * h
-        if smile_curve == 'quadratic':
-            smile = amp * (np.abs(x_norm) ** smile_pow)
-        else:
+@@ -161,58 +194,96 @@ def generate_combined_heatmap(
             smile = amp * (np.abs(x_norm) ** smile_pow) * (1 - smile_s_coef * x_norm)
 
         src_y = np.arange(h)[:, None] + smile            # shape (h, w)
@@ -183,18 +210,45 @@ def generate_combined_heatmap(
                         row = j if edge=='top' else -j-1
                         heat[row, :] *= f
 
+    # 7) Background staining & texture
+    if background_intensity > 0 or texture_strength > 0:
+        grad_x = np.linspace(-1, 1, w)
+        grad_y = np.linspace(-1, 1, h)[:, None]
+        gradient = 0.35 * grad_x + 0.35 * grad_y
+
+        mottled = gaussian_filter(
+            rng.normal(0, 1, size=grid_size),
+            sigma=max(1, texture_scale * min(grid_size) / 40)
+        )
+        mottled = (mottled - mottled.min()) / (np.ptp(mottled) + 1e-9) - 0.5
+
+        heat += background_intensity * (1 + gradient)
+        heat += texture_strength * mottled
+
+    # 8) Haze/halos for stronger blotting
+    if haze_strength > 0:
+        blurred = gaussian_filter(heat, sigma=haze_sigma)
+        heat = (1 - haze_strength) * heat + haze_strength * blurred
+
+    # 9) Dynamic range shaping (γ < 1 brightens low intensities)
+    heat = np.maximum(heat, 0)
+    if dynamic_range_gamma != 1.0 and heat.max() > 0:
+        norm = heat / heat.max()
+        heat = (norm ** dynamic_range_gamma) * heat.max()
+
     extent = (pi_min, pi_max, y_min, y_max)
     return heat, extent
 
 
-def plot_heatmap(heatmap, extent, *, cmap=None):
+def plot_heatmap(heatmap, extent, *, cmap=None, gel_like=True):
     """
     Display the heatmap (pI × MW) and return the Matplotlib Figure.
     """
     if cmap is None:
         cmap = create_custom_blue_cmap()
 
-    fig, ax = plt.subplots(figsize=(10, 10), facecolor='white')
+    fig_face = '#f7f4f7' if gel_like else 'white'
+    fig, ax = plt.subplots(figsize=(10, 10), facecolor=fig_face)
     im = ax.imshow(
         heatmap,
         origin='lower',
@@ -205,14 +259,25 @@ def plot_heatmap(heatmap, extent, *, cmap=None):
 
     ax.set_xlabel("Isoelectric Point (pI)")
     ax.set_ylabel("Molecular Weight (kDa)")
-    ax.set_title("2D Gel Electrophoresis Simulation")
+    ax.set_title("2D Gel Electrophoresis Simulation", fontsize=13, pad=10)
 
     def inv_ln(v): return np.exp((v + 6.4014)/5.3779)
     ticks = [t for t in ax.get_yticks() if extent[2] <= t <= extent[3]]
     ax.set_yticks(ticks)
     ax.set_yticklabels([f"{inv_ln(t):.0f}" for t in ticks])
 
-    ax.grid(True, which='major', linestyle='-', linewidth=0.5, alpha=0.4)
-    ax.set_facecolor('#bbdefb')
-    cbar = fig.colorbar(im, ax=ax, label="Protein Abundance")
+    if gel_like:
+        ax.grid(False)
+        ax.set_facecolor('#ece9f1')
+        ax.tick_params(colors='#3f3d56', labelsize=9)
+        for spine in ax.spines.values():
+            spine.set_alpha(0.25)
+        cbar = fig.colorbar(im, ax=ax, label="Protein Abundance")
+        cbar.outline.set_visible(False)
+        cbar.ax.tick_params(labelsize=9)
+    else:
+        ax.grid(True, which='major', linestyle='-', linewidth=0.5, alpha=0.4)
+        ax.set_facecolor('#bbdefb')
+        fig.colorbar(im, ax=ax, label="Protein Abundance")
+
     return fig
